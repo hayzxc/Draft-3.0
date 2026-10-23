@@ -527,7 +527,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
             <div className="flex items-center gap-2 h-10 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/90 dark:bg-slate-800 px-3 text-xs font-bold text-slate-700 dark:text-slate-200">
               <span className="font-mono text-blue-700 dark:text-blue-400">{CERTIFICATE_CONSTANTS.registrationNumber}</span>
               <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                (PT Patriot Sakti Indonesia)
+                (PT Prana Argentum)
               </span>
             </div>
           </div>
