@@ -19,7 +19,12 @@ export default async function EditTreatmentPage({ params }: PageProps) {
     notFound();
   }
 
-  const companyAsset = await prisma.companyAsset.findFirst();
+  let companyAsset = null;
+  try {
+    companyAsset = await prisma.companyAsset.findFirst();
+  } catch (err) {
+    console.warn("Failed to fetch companyAsset in /treatment/[id]:", err);
+  }
 
   return (
     <div className="mx-auto max-w-[1760px] px-4 py-6 sm:px-6 lg:px-8">
