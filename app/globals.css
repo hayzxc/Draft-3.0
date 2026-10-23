@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 215 25% 94%; /* #EFF3F8 slate-100 / cool neutral canvas */
+    --foreground: 222.2 47.4% 11.2%; /* #0F172A slate-900 */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    --primary: 222.2 47.4% 11.2%; /* #0F172A slate-900 */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 215 20% 90%; /* #E2E8F0 slate-200 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 215 20% 90%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B slate-500 */
+    --accent: 221.2 83.2% 53.3%; /* #2563EB blue-600 */
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 20% 86%; /* #CBD5E1 slate-300 */
+    --input: 215 20% 86%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+  }
+
+  .dark,
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: 222.2 84% 4.9%; /* #020617 slate-950 */
+      --foreground: 210 40% 98%;
+      --card: 222.2 47.4% 11.2%; /* #0F172A slate-900 */
+      --card-foreground: 210 40% 98%;
+      --popover: 222.2 47.4% 11.2%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 210 40% 98%;
+      --primary-foreground: 222.2 47.4% 11.2%;
+      --secondary: 217.2 32.6% 17.5%; /* #1E293B slate-800 */
+      --secondary-foreground: 210 40% 98%;
+      --muted: 217.2 32.6% 17.5%;
+      --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 slate-400 */
+      --accent: 217.2 91.2% 59.8%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 217.2 32.6% 17.5%;
+      --input: 217.2 32.6% 17.5%;
+      --ring: 217.2 91.2% 59.8%;
+    }
+  }
+}
+
+body {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  min-height: 100vh;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   Typewriter Live Preview Effects
+   ========================================================================== */
+
+@keyframes typewriter-caret-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes typewriter-ink-strike {
+  0% {
+    opacity: 0.35;
+    transform: translateY(-0.8px) scale(0.97);
+    filter: blur(0.2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.15em;
+  background-color: #2563eb;
+  margin-left: 1.5px;
+  margin-right: 1.5px;
+  vertical-align: -0.15em;
+  animation: typewriter-caret-blink 0.75s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  box-shadow: 0 0 5px rgba(37, 99, 235, 0.55);
+  border-radius: 1px;
+}
+
+.typewriter-char-latest {
+  display: inline;
+  animation: typewriter-ink-strike 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.typewriter-font {
+  font-family: "Courier New", Courier, monospace;
+}
+

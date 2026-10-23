@@ -1,0 +1,30 @@
+export const GAS_CLEARANCE_STATIC_TEXT = {
+  titleId: "SERTIFIKAT BEBAS GAS",
+  titleEn: "GAS CLEARANCE CERTIFICATE",
+  headingId: "Kepada pihak-pihak yang berkepentingan",
+  headingEn: "To whom it may concern",
+  introId: "Saya sebagai penanggungjawab fumigasi di bawah ini:",
+  introEn: "I, being the person-in-charge of the fumigation of the following:",
+  declaration1Id: "Bersama ini menyatakan bahwa tempat, peti kemas dan komoditas/media pembawa tersebut di atas telah bebas dari konsentrasi gas yang membahayakan.",
+  declaration1En: "Hereby declare that the area, container and the commodity/article mentioned above is free from harmful concentration of the gas.",
+  declaration2Id: "Saya membuat pernyataan ini setelah memeriksa konsentrasi gas di area serta ruangan fumigasi.",
+  declaration2En: "I make this declaration after having examined the gas levels in the area and the fumigation workspace.",
+  gasLevelLabelId: "Konsentrasi gas setelah penganginan",
+  gasLevelLabelEn: "Gas levels after fumigation",
+  fumigationCompanyId: "Pelaksana Fumigasi,",
+  fumigationCompanyEn: "Fumigation company",
+  stampLabelId: "Cap Perusahaan Fumigasi*",
+  stampLabelEn: "Stamp of company*",
+  signatureLabel: "Signature and name of fumigator",
+  barantinText: "Printed digitally through: FUMI TRUST by BARANTIN.",
+  barantinNote: "The authenticity of this document can be verified through the QRcode above or via the following link:",
+} as const;
+
+export const TREATMENT_STATIC_TEXT = {
+  title: "TREATMENT CERTIFICATE - Methyl Bromide Fumigation",
+  declarationHeading: "Declaration",
+  declarationIntro: "I, the fumigator-in-charge declare:",
+  declarationBody1: "The fumigation certified was conducted in accordance with the treatment schedule, import conditions, and all the requirements in the Methyl Bromide Fumigation Methodology, and",
+  declarationBody2: "The information I have provided is true and correct.",
+  additionalDeclarationsHeading: "Additional Declarations",
+} as const;

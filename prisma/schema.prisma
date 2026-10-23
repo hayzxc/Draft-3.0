@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model GasClearanceCertificate {
+  id                    String    @id @default(cuid())
+  serialNo              String?
+  certificateNumber     String?
+  registrationNumber    String?   @default("ID0018MB")
+  certificateDate       DateTime?
+  commodity             String?
+  containerNumber       String?
+  carrierVessel         String?
+  fumigationArea        String?
+  fumigant              String?   @default("Methyl Bromide (CH3Br)")
+  commencingAt          DateTime?
+  completedAt           DateTime?
+  gasLevelPpm           Decimal?  @default(0)
+  gasLevelReading       String?
+  fumigatorName         String?
+  fumigatorSignatureUrl String?
+  verificationUrl       String?
+  qrCodeDataUrl         String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model TreatmentCertificate {
+  id                           String    @id @default(cuid())
+  serialNo                     String?
+  dateIssued                   DateTime?
+  certificateNumber            String?
+  consignmentLinkPpk           String?
+  consignmentLinkDo            String?
+  consignmentLinkBl            String?
+  containers                   String?
+  consignee                    String?
+  sealNumbers                  String?
+  carrierVessel                String?
+  clientNameAddress            String?
+  commodityDescription         String?
+  originCountry                String?
+  destinationCountry           String?
+  portOfLoading                String?
+  portOfUnloading              String?
+  targetOfFumigation           String?
+  enclosureType                String?
+  prescribedDoseRate           String?
+  prescribedExposurePeriod     String?
+  prescribedTemperature        String?
+  appliedDose                  String?
+  appliedExposurePeriod        String?
+  appliedTemperature           String?
+  placeOfFumigation            String?
+  commencingAt                 DateTime?
+  completedAt                  DateTime?
+  finalTlvReading              String?   @default("ALL CONTAINERS < 5 PPM")
+  fumigatorName                String?
+  fumigatorAccreditationNumber String?   @default("-")
+  fumigatorSignatureUrl        String?
+  additionalDeclarations       String?
+  verificationUrl              String?
+  qrCodeDataUrl                String?
+  includeGasClearance          Boolean   @default(true)
+  gcCertificateNumber          String?
+  gcRegistrationNumber         String?   @default("ID0018MB")
+  gcGasLevelReading            String?
+  gcFumigant                   String?   @default("Methyl Bromide (CH3Br)")
+  gcSerialNo                   String?
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+}
+
+model CompanyAsset {
+  id            String   @id @default(cuid())
+  stampImageUrl String
+  logoImageUrl  String
+  updatedAt     DateTime @updatedAt
+}
