@@ -1341,8 +1341,8 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
           }`}
         >
           {/* Header with Toggle Switch */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
               <div
                 className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-colors mt-0.5 ${
                   watchIncludeGc
@@ -1352,7 +1352,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
               >
                 <FileCheck className="h-5 w-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <label
                     htmlFor="includeGasClearance"
@@ -1371,7 +1371,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                   {watchIncludeGc
                     ? "Data kontainer, komoditas, kapal, tempat, dan fumigator disinkronkan otomatis dari FC ke Sertifikat Bebas Gas."
                     : "Gas Clearance dinonaktifkan. Dokumen cetak PDF dan DOCX hanya berisi 1 halaman (Treatment Certificate saja)."}
@@ -1380,14 +1380,14 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
             </div>
 
             {/* Modern Toggle Switch */}
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
               <input
                 id="includeGasClearance"
                 type="checkbox"
                 {...register("includeGasClearance")}
                 className="sr-only peer"
               />
-              <div className="w-12 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/20 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-12 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/20 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
             </label>
           </div>
 
