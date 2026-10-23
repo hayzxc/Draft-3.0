@@ -1397,10 +1397,10 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
               {/* 2-Column Symmetrical Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-end justify-between gap-2 min-h-[38px] mb-1.5">
                     <label
                       htmlFor="gcCertificateNumber"
-                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300 leading-snug pb-0.5"
                     >
                       Nomor GC / GC Number
                     </label>
@@ -1415,7 +1415,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
                           typewriterAudio.playKeyClick();
                         }
                       }}
-                      className="text-[11px] font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline cursor-pointer"
+                      className="text-[11px] font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline cursor-pointer shrink-0 pb-0.5 leading-snug"
                       title="Salin dari Certificate Number (ubah TC -> GC)"
                     >
                       Salin dari FC (TC→GC)
@@ -1438,12 +1438,14 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="gcRegistrationNumber"
-                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
-                  >
-                    Nomor Registrasi / Registration Number
-                  </label>
+                  <div className="flex items-end min-h-[38px] mb-1.5">
+                    <label
+                      htmlFor="gcRegistrationNumber"
+                      className="block text-xs font-semibold text-slate-700 dark:text-slate-300 leading-snug pb-0.5"
+                    >
+                      Nomor Registrasi / Registration Number
+                    </label>
+                  </div>
                   <input
                     id="gcRegistrationNumber"
                     type="text"
