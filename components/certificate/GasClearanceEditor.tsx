@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { PDFViewerWrapper } from "@/components/pdf/PDFViewerWrapper";
+import { DownloadFilenameDialog } from "@/components/ui/DownloadFilenameDialog";
 
 interface GasClearanceEditorProps {
   initialData?: GasClearanceCertificateData;
@@ -27,18 +28,17 @@ export const GasClearanceEditor: React.FC<GasClearanceEditorProps> = ({
 }) => {
   const [previewData, setPreviewData] = useState<GasClearanceCertificateData>(
     initialData || {
-      serialNo: "202600079",
-      certificateNumber: "00008/GC/MB/JZ70SGVQ7C/ID0018MB/X/2026",
+      serialNo: "",
+      certificateNumber: "",
       registrationNumber: "ID0018MB",
-      certificateDate: new Date(),
-      commodity:
-        "1 X 20' SAID TO CONTAIN 10 PALLETS = 11,800 PCS = 21.8540 M3 OF MERBAU REEDED DECKING (INTSIA BIJUGA) GW : 18,026.00 KGS NW : 17,484.00 KGS MEAS : 21.8540 M3",
-      containerNumber: "CSNU2373750",
-      carrierVessel: "YM EFFICIENCY 208N",
-      fumigationArea: "PT Patriot Sakti Indonesia | Jl. Raya Kalianak No. 59 A Surabaya",
+      certificateDate: undefined as any,
+      commodity: "",
+      containerNumber: "",
+      carrierVessel: "",
+      fumigationArea: "",
       fumigant: "Methyl Bromide (CH3Br)",
-      commencingAt: new Date("2026-10-20T17:46:00"),
-      completedAt: new Date("2026-10-21T20:00:00"),
+      commencingAt: undefined as any,
+      completedAt: undefined as any,
       gasLevelPpm: null,
       gasLevelReading: "",
       fumigatorName: "",
@@ -58,6 +58,17 @@ export const GasClearanceEditor: React.FC<GasClearanceEditorProps> = ({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Dialog state for filename confirmation before downloading
+  const [downloadDialog, setDownloadDialog] = useState<{
+    isOpen: boolean;
+    type: "pdf" | "docx";
+    defaultFilename: string;
+  }>({
+    isOpen: false,
+    type: "pdf",
+    defaultFilename: "",
+  });
 
   // Stable callbacks for form to avoid re-rendering form on parent state change
   const handleDataChange = useCallback((data: GasClearanceCertificateData) => {
@@ -89,50 +100,74 @@ export const GasClearanceEditor: React.FC<GasClearanceEditorProps> = ({
     }
   }, [previewData.verificationUrl]);
 
-  const handleDownloadDocx = async () => {
-    try {
-      setIsGeneratingDocx(true);
-      const blob = await generateGasClearanceDocxBlob(previewData);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const safeNum = (previewData.containerNumber || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
-      a.href = url;
-      a.download = `Gas-Clearance-${safeNum}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to generate DOCX:", error);
-      alert("Gagal membuat file DOCX. Silakan coba beberapa saat lagi.");
-    } finally {
-      setIsGeneratingDocx(false);
-    }
+  // Open dialog for DOCX download
+  const handleOpenDocxDialog = () => {
+    const rawCont = previewData.containerNumber?.trim();
+    const rawCert = previewData.certificateNumber?.trim();
+    const safePart = (rawCont || rawCert || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
+    setDownloadDialog({
+      isOpen: true,
+      type: "docx",
+      defaultFilename: `Gas-Clearance-${safePart}`,
+    });
   };
 
-  const handleDownloadPdf = async () => {
-    if (initialData?.id) {
-      window.open(`/api/certificates/${initialData.id}/pdf`, "_blank");
-      return;
-    }
-    try {
+  // Open dialog for PDF download
+  const handleOpenPdfDialog = () => {
+    const rawCont = previewData.containerNumber?.trim();
+    const rawCert = previewData.certificateNumber?.trim();
+    const safePart = (rawCont || rawCert || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
+    setDownloadDialog({
+      isOpen: true,
+      type: "pdf",
+      defaultFilename: `Gas-Clearance-${safePart}`,
+    });
+  };
+
+  // Execute download with user's chosen filename
+  const handleConfirmDownload = async (finalFilename: string) => {
+    if (downloadDialog.type === "docx") {
+      setIsGeneratingDocx(true);
+      try {
+        const blob = await generateGasClearanceDocxBlob(previewData);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = finalFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } finally {
+        setIsGeneratingDocx(false);
+      }
+    } else {
       setIsGeneratingPdf(true);
-      const { pdf } = await import("@react-pdf/renderer");
-      const blob = await pdf(<CertificateDocument data={previewData} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const safeNum = (previewData.containerNumber || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
-      a.href = url;
-      a.download = `Gas-Clearance-${safeNum}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to generate client PDF:", error);
-      alert("Gagal membuat PDF. Silakan coba beberapa saat lagi.");
-    } finally {
-      setIsGeneratingPdf(false);
+      try {
+        let blob: Blob;
+        try {
+          const { pdf } = await import("@react-pdf/renderer");
+          blob = await pdf(<CertificateDocument data={previewData} />).toBlob();
+        } catch (clientErr) {
+          if (initialData?.id) {
+            const res = await fetch(`/api/certificates/${initialData.id}/pdf`);
+            if (!res.ok) throw clientErr;
+            blob = await res.blob();
+          } else {
+            throw clientErr;
+          }
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = finalFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } finally {
+        setIsGeneratingPdf(false);
+      }
     }
   };
 
@@ -199,7 +234,7 @@ export const GasClearanceEditor: React.FC<GasClearanceEditorProps> = ({
               <button
                 type="button"
                 id="btn-gc-download-docx"
-                onClick={handleDownloadDocx}
+                onClick={handleOpenDocxDialog}
                 disabled={isGeneratingDocx}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all hover:shadow disabled:opacity-60 cursor-pointer"
                 title="Download Gas Clearance Certificate sebagai dokumen Word (.docx)"
@@ -221,7 +256,7 @@ export const GasClearanceEditor: React.FC<GasClearanceEditorProps> = ({
               <button
                 type="button"
                 id="btn-gc-download-pdf"
-                onClick={handleDownloadPdf}
+                onClick={handleOpenPdfDialog}
                 disabled={isGeneratingPdf}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all hover:shadow disabled:opacity-60 cursor-pointer active:scale-[0.98]"
                 title="Download Gas Clearance Certificate sebagai dokumen PDF (.pdf)"
@@ -249,6 +284,18 @@ export const GasClearanceEditor: React.FC<GasClearanceEditorProps> = ({
           </PDFViewerWrapper>
         </div>
       </div>
+
+      {/* Rename File Before Download Dialog */}
+      <DownloadFilenameDialog
+        isOpen={downloadDialog.isOpen}
+        onClose={() => setDownloadDialog((prev) => ({ ...prev, isOpen: false }))}
+        defaultFilename={downloadDialog.defaultFilename}
+        fileExtension={downloadDialog.type}
+        documentTypeLabel="Gas Clearance Certificate"
+        containerNumber={previewData.containerNumber || ""}
+        certificateNumber={previewData.certificateNumber || ""}
+        onConfirmDownload={handleConfirmDownload}
+      />
     </div>
   );
 };

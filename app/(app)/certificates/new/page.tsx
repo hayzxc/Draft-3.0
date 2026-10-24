@@ -26,19 +26,17 @@ export default async function NewGasClearancePage() {
       </div>
       <GasClearanceEditor
         initialData={{
-          serialNo: "202600079",
-          certificateNumber: "00008/GC/MB/JZ70SGVQ7C/ID0018MB/X/2026",
+          serialNo: "",
+          certificateNumber: "",
           registrationNumber: "ID0018MB",
-          certificateDate: new Date(),
-          commodity:
-            "1 X 20' SAID TO CONTAIN 10 PALLETS = 11,800 PCS = 21.8540 M3 OF MERBAU REEDED DECKING (INTSIA BIJUGA) GW : 18,026.00 KGS NW : 17,484.00 KGS MEAS : 21.8540 M3",
-          containerNumber: "CSNU2373750",
-          carrierVessel: "YM EFFICIENCY 208N",
-          fumigationArea:
-            "PT Patriot Sakti Indonesia | Jl. Raya Kalianak No. 59 A Surabaya",
+          certificateDate: undefined as any,
+          commodity: "",
+          containerNumber: "",
+          carrierVessel: "",
+          fumigationArea: "",
           fumigant: "Methyl Bromide (CH3Br)",
-          commencingAt: new Date("2026-10-20T17:46:00"),
-          completedAt: new Date("2026-10-21T20:00:00"),
+          commencingAt: undefined as any,
+          completedAt: undefined as any,
           gasLevelPpm: null,
           gasLevelReading: "",
           fumigatorName: "",

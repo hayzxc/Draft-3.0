@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { TreatmentForm } from "./TreatmentForm";
 import { TreatmentDocument, TreatmentCertificateData } from "./TreatmentDocument";
 import { PDFViewerWrapper } from "@/components/pdf/PDFViewerWrapper";
+import { DownloadFilenameDialog } from "@/components/ui/DownloadFilenameDialog";
 import { generateQrDataUrl } from "@/lib/qr";
 import { typewriterAudio } from "@/lib/typewriter-sound";
 import { generateTreatmentDocxBlob } from "@/lib/treatment-docx";
@@ -110,50 +111,85 @@ export const TreatmentEditor: React.FC<TreatmentEditorProps> = ({
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  const handleDownloadDocx = async () => {
-    try {
-      setIsGeneratingDocx(true);
-      const blob = await generateTreatmentDocxBlob(previewData);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const safeNum = (previewData.certificateNumber || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
-      a.href = url;
-      a.download = `Treatment-Certificate-${safeNum}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to generate DOCX:", error);
-      alert("Gagal membuat file DOCX. Silakan coba beberapa saat lagi.");
-    } finally {
-      setIsGeneratingDocx(false);
-    }
+  // Dialog state for filename confirmation before downloading
+  const [downloadDialog, setDownloadDialog] = useState<{
+    isOpen: boolean;
+    type: "pdf" | "docx";
+    defaultFilename: string;
+  }>({
+    isOpen: false,
+    type: "pdf",
+    defaultFilename: "",
+  });
+
+  // Open dialog for DOCX download
+  const handleOpenDocxDialog = () => {
+    const rawCert = previewData.certificateNumber?.trim();
+    const rawCont = previewData.containers?.trim()?.split(/[\r\n,]+/)[0]?.trim();
+    const safePart = (rawCert || rawCont || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
+    setDownloadDialog({
+      isOpen: true,
+      type: "docx",
+      defaultFilename: `Treatment-Certificate-${safePart}`,
+    });
   };
 
-  const handleDownloadPdf = async () => {
-    try {
-      setIsGeneratingPdf(true);
-      const { pdf } = await import("@react-pdf/renderer");
-      const blob = await pdf(<TreatmentDocument data={previewData} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const safeNum = (previewData.certificateNumber || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
-      a.href = url;
-      a.download = `Treatment-Certificate-${safeNum}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      if (initialData?.id) {
-        window.open(`/api/treatment-certificates/${initialData.id}/pdf`, "_blank");
-      } else {
-        alert("Gagal membuat file PDF. Silakan coba beberapa saat lagi.");
+  // Open dialog for PDF download
+  const handleOpenPdfDialog = () => {
+    const rawCert = previewData.certificateNumber?.trim();
+    const rawCont = previewData.containers?.trim()?.split(/[\r\n,]+/)[0]?.trim();
+    const safePart = (rawCert || rawCont || "Draft").replace(/[^a-zA-Z0-9_-]/g, "_");
+    setDownloadDialog({
+      isOpen: true,
+      type: "pdf",
+      defaultFilename: `Treatment-Certificate-${safePart}`,
+    });
+  };
+
+  // Execute download with user's chosen filename
+  const handleConfirmDownload = async (finalFilename: string) => {
+    if (downloadDialog.type === "docx") {
+      setIsGeneratingDocx(true);
+      try {
+        const blob = await generateTreatmentDocxBlob(previewData);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = finalFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } finally {
+        setIsGeneratingDocx(false);
       }
-    } finally {
-      setIsGeneratingPdf(false);
+    } else {
+      setIsGeneratingPdf(true);
+      try {
+        let blob: Blob;
+        try {
+          const { pdf } = await import("@react-pdf/renderer");
+          blob = await pdf(<TreatmentDocument data={previewData} />).toBlob();
+        } catch (clientErr) {
+          if (initialData?.id) {
+            const res = await fetch(`/api/treatment-certificates/${initialData.id}/pdf`);
+            if (!res.ok) throw clientErr;
+            blob = await res.blob();
+          } else {
+            throw clientErr;
+          }
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = finalFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } finally {
+        setIsGeneratingPdf(false);
+      }
     }
   };
 
@@ -222,7 +258,7 @@ export const TreatmentEditor: React.FC<TreatmentEditorProps> = ({
               <button
                 type="button"
                 id="btn-download-docx"
-                onClick={handleDownloadDocx}
+                onClick={handleOpenDocxDialog}
                 disabled={isGeneratingDocx}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
                 title={
@@ -248,7 +284,7 @@ export const TreatmentEditor: React.FC<TreatmentEditorProps> = ({
               <button
                 type="button"
                 id="btn-download-pdf"
-                onClick={handleDownloadPdf}
+                onClick={handleOpenPdfDialog}
                 disabled={isGeneratingPdf}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
                 title={
@@ -280,6 +316,18 @@ export const TreatmentEditor: React.FC<TreatmentEditorProps> = ({
           </PDFViewerWrapper>
         </div>
       </div>
+
+      {/* Rename File Before Download Dialog */}
+      <DownloadFilenameDialog
+        isOpen={downloadDialog.isOpen}
+        onClose={() => setDownloadDialog((prev) => ({ ...prev, isOpen: false }))}
+        defaultFilename={downloadDialog.defaultFilename}
+        fileExtension={downloadDialog.type}
+        documentTypeLabel="Treatment Certificate"
+        containerNumber={previewData.containers || ""}
+        certificateNumber={previewData.certificateNumber || ""}
+        onConfirmDownload={handleConfirmDownload}
+      />
     </div>
   );
 };

@@ -45,28 +45,23 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>(initialData?.qrCodeDataUrl || "");
 
   const defaultValues: Partial<CertificateInput> = {
-    serialNo: initialData?.serialNo ?? "202600079",
-    certificateNumber:
-      initialData?.certificateNumber ?? "00008/GC/MB/JZ70SGVQ7C/ID0018MB/X/2026",
+    serialNo: initialData?.serialNo ?? "",
+    certificateNumber: initialData?.certificateNumber ?? "",
     registrationNumber: initialData?.registrationNumber ?? "ID0018MB",
     certificateDate: initialData?.certificateDate
       ? new Date(initialData.certificateDate)
-      : new Date(),
-    commodity:
-      initialData?.commodity ??
-      "1 X 20' SAID TO CONTAIN 10 PALLETS = 11,800 PCS = 21.8540 M3 OF MERBAU REEDED DECKING (INTSIA BIJUGA) GW : 18,026.00 KGS NW : 17,484.00 KGS MEAS : 21.8540 M3",
-    containerNumber: initialData?.containerNumber ?? "CSNU2373750",
-    carrierVessel: initialData?.carrierVessel ?? "YM EFFICIENCY 208N",
-    fumigationArea:
-      initialData?.fumigationArea ??
-      "PT Patriot Sakti Indonesia | Jl. Raya Kalianak No. 59 A Surabaya",
+      : (undefined as any),
+    commodity: initialData?.commodity ?? "",
+    containerNumber: initialData?.containerNumber ?? "",
+    carrierVessel: initialData?.carrierVessel ?? "",
+    fumigationArea: initialData?.fumigationArea ?? "",
     fumigant: initialData?.fumigant ?? "Methyl Bromide (CH3Br)",
     commencingAt: initialData?.commencingAt
       ? new Date(initialData.commencingAt)
-      : new Date("2026-10-20T17:46:00"),
+      : (undefined as any),
     completedAt: initialData?.completedAt
       ? new Date(initialData.completedAt)
-      : new Date("2026-10-21T20:00:00"),
+      : (undefined as any),
     gasLevelPpm:
       initialData?.gasLevelPpm !== undefined && initialData?.gasLevelPpm !== null
         ? Number(initialData.gasLevelPpm)
@@ -129,14 +124,14 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
         serialNo: value.serialNo || "",
         certificateNumber: value.certificateNumber || "",
         registrationNumber: value.registrationNumber || "ID0018MB",
-        certificateDate: value.certificateDate || new Date(),
+        certificateDate: value.certificateDate ? new Date(value.certificateDate) : (undefined as any),
         commodity: value.commodity || "",
         containerNumber: value.containerNumber || "",
         carrierVessel: value.carrierVessel || "",
         fumigationArea: value.fumigationArea || "",
         fumigant: value.fumigant || "Methyl Bromide (CH3Br)",
-        commencingAt: value.commencingAt || new Date(),
-        completedAt: value.completedAt || new Date(),
+        commencingAt: value.commencingAt ? new Date(value.commencingAt) : (undefined as any),
+        completedAt: value.completedAt ? new Date(value.completedAt) : (undefined as any),
         gasLevelPpm:
           value.gasLevelPpm !== undefined && value.gasLevelPpm !== null && (value.gasLevelPpm as any) !== ""
             ? Number(value.gasLevelPpm)
@@ -423,7 +418,7 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
         <div className="space-y-4">
           {/* Commodity Textarea */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="mb-1.5">
               <label htmlFor="commodity" className="block">
                 <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Nama Komoditas / Media Pembawa
@@ -432,19 +427,6 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
                   Commodity / article
                 </span>
               </label>
-              <button
-                type="button"
-                onClick={() =>
-                  setValue(
-                    "commodity",
-                    "1 X 20' SAID TO CONTAIN 10 PALLETS = 11,800 PCS = 21.8540 M3 OF MERBAU REEDED DECKING (INTSIA BIJUGA) GW : 18,026.00 KGS NW : 17,484.00 KGS MEAS : 21.8540 M3",
-                    { shouldValidate: true }
-                  )
-                }
-                className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 underline"
-              >
-                Isi Contoh Merbau
-              </button>
             </div>
             <textarea
               rows={3}
@@ -663,7 +645,7 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
               type="text"
               id="gasLevelReading"
               {...register("gasLevelReading")}
-              placeholder="Kosong jika belum diisi (contoh: CSNU2373750: 0 ppm)"
+              placeholder="Kosong jika belum diisi (contoh: 0 ppm atau CSNU1234567: 0 ppm)"
               className="w-full h-10 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors shadow-sm"
             />
           </div>
@@ -681,8 +663,8 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
             <button
               type="button"
               onClick={() => {
-                const cont = getValues("containerNumber")?.trim() || "CSNU2373750";
-                setValue("gasLevelReading", `${cont}: 0 ppm`, { shouldValidate: true });
+                const cont = getValues("containerNumber")?.trim();
+                setValue("gasLevelReading", cont ? `${cont}: 0 ppm` : "0 ppm", { shouldValidate: true });
               }}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-100/80 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors"
             >
@@ -699,8 +681,8 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
             <button
               type="button"
               onClick={() => {
-                const cont = getValues("containerNumber")?.trim() || "CSNU2373750";
-                setValue("gasLevelReading", `${cont}: BEBAS GAS (0 PPM)`, { shouldValidate: true });
+                const cont = getValues("containerNumber")?.trim();
+                setValue("gasLevelReading", cont ? `${cont}: BEBAS GAS (0 PPM)` : "BEBAS GAS (0 PPM)", { shouldValidate: true });
               }}
               className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-colors"
             >
