@@ -41,10 +41,12 @@ next-env.d.ts
 *.docx.tmp
 temp_docx_extracted
 
-#Ai agents
+# Ai agents & editor
 .agents
 .vscode
 /Docs
 
-#sounds
+# local docs & sounds
+DEPLOYMENT.md
+Duck_Sound_Typewriter.mp3
 Duck_Sound_Typewritter.mp3
