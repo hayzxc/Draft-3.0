@@ -32,6 +32,7 @@ export default async function NewTreatmentPage() {
           consignmentLinkPpk: "",
           consignmentLinkDo: "",
           consignmentLinkBl: "",
+          consignmentLinkOther: "",
           containers: "",
           consignee: "",
           sealNumbers: "",

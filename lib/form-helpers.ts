@@ -71,8 +71,8 @@ export const formatConsigneeDisplay = (consigneeText: string | null | undefined)
   let text = cleanPastedText(consigneeText, false);
   if (!text) return "";
 
-  // Ensure any newline right before NOTIFY PARTY is merged into the continuous stream with a single space
-  text = text.replace(/[\r\n]+\s*(notify\s*party\s*:?|also\s*notify\s*:?)/gi, " $1");
+  // Merge any newline into continuous stream with single space
+  text = text.replace(/[\r\n]+/g, " ");
 
   // Normalize CONSIGNEE prefix
   if (/^consignee\s*:/i.test(text)) {

@@ -14,6 +14,7 @@ export const baseTreatmentCertificateSchema = z.object({
   consignmentLinkPpk: z.string().optional().nullable(),
   consignmentLinkDo: z.string().optional().nullable(),
   consignmentLinkBl: z.string().optional().nullable(),
+  consignmentLinkOther: z.string().optional().nullable(),
   containers: z.string().optional().nullable(),
   consignee: z.string().optional().nullable(),
   notifyParty: z.string().optional().nullable(),

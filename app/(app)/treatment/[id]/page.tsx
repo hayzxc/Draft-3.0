@@ -56,6 +56,7 @@ export default async function EditTreatmentPage({ params }: PageProps) {
           consignmentLinkPpk: certificate.consignmentLinkPpk,
           consignmentLinkDo: certificate.consignmentLinkDo,
           consignmentLinkBl: certificate.consignmentLinkBl,
+          consignmentLinkOther: (certificate as any).consignmentLinkOther,
           containers: certificate.containers,
           consignee: certificate.consignee,
           sealNumbers: certificate.sealNumbers,

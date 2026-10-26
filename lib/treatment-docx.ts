@@ -260,18 +260,22 @@ export async function createTreatmentDocxDocument(
       ],
     })
   );
-  const consigneeFormatted = formatConsigneeDisplay(data.consignee);
-  if (consigneeFormatted) {
-    const lines = consigneeFormatted.split("\n");
-    for (const line of lines) {
-      consignmentLinkParagraphs.push(
-        new Paragraph({
-          spacing: { before: 0, after: 15, line: 215 },
-          children: [new TextRun({ text: line, size: 14, font: FONT_FAMILY })],
-        })
-      );
+  if (data.consignmentLinkOther?.trim()) {
+    const otherLines = data.consignmentLinkOther.split(/[\r\n]+/);
+    for (const line of otherLines) {
+      if (line.trim()) {
+        consignmentLinkParagraphs.push(
+          new Paragraph({
+            spacing: { before: 0, after: 15, line: 215 },
+            children: [
+              new TextRun({ text: line.trim(), bold: true, size: 14, font: FONT_FAMILY }),
+            ],
+          })
+        );
+      }
     }
   }
+
 
   // --- Page 1: Treatment Certificate Children ---
   const treatmentChildren: (Paragraph | Table)[] = [
@@ -449,7 +453,38 @@ export async function createTreatmentDocxDocument(
                 ],
               }),
 
-              // Row 4: Commodity description and quantity
+              // Row 4: Notify party
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 3269, type: WidthType.DXA },
+                    borders: cellBorders,
+                    margins: cellMargins,
+                    children: [createP("Notify party", false, "000000", 14)],
+                  }),
+                  new TableCell({
+                    columnSpan: 3,
+                    width: { size: 7277, type: WidthType.DXA },
+                    borders: cellBorders,
+                    margins: cellMargins,
+                    children: [
+                      new Paragraph({
+                        spacing: { before: 0, after: 15, line: 215 },
+                        children: [
+                          new TextRun({
+                            text: formatConsigneeDisplay(data.consignee) || "-",
+                            bold: true,
+                            size: 14,
+                            font: FONT_FAMILY,
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+
+              // Row 5: Commodity description and quantity
               new TableRow({
                 children: [
                   new TableCell({

@@ -141,14 +141,15 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
                 placeholder="-"
               />
             </div>
-            <div className="font-normal text-slate-900 whitespace-pre-line break-words leading-snug">
-              <TypewriterText
-                text={formatConsigneeDisplay(data.consignee)}
-                active={activeField === "consignee"}
-                bold={false}
-                placeholder=""
-              />
-            </div>
+            {(data.consignmentLinkOther?.trim() || activeField === "consignmentLinkOther") ? (
+              <div className="font-bold text-slate-900 whitespace-pre-line break-words leading-snug">
+                <TypewriterText
+                  text={data.consignmentLinkOther}
+                  active={activeField === "consignmentLinkOther"}
+                  placeholder=""
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -191,7 +192,22 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
           </div>
         </div>
 
-        {/* Row 4: Commodity description and quantity */}
+        {/* Row 4: Notify party */}
+        <div className="flex border-b border-black items-stretch w-full">
+          <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
+            Notify party
+          </div>
+          <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug">
+            <TypewriterText
+              text={formatConsigneeDisplay(data.consignee)}
+              active={activeField === "consignee" || activeField === "notifyParty"}
+              bold={true}
+              placeholder="-"
+            />
+          </div>
+        </div>
+
+        {/* Row 5: Commodity description and quantity */}
         <div className="flex border-b border-black items-stretch w-full">
           <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
             Commodity description and quantity

@@ -45,6 +45,7 @@ model TreatmentCertificate {
   consignmentLinkPpk           String?
   consignmentLinkDo            String?
   consignmentLinkBl            String?
+  consignmentLinkOther         String?
   containers                   String?
   consignee                    String?
   sealNumbers                  String?

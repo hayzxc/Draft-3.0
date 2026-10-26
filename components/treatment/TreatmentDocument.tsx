@@ -206,6 +206,7 @@ export interface TreatmentCertificateData {
   consignmentLinkPpk?: string | null;
   consignmentLinkDo?: string | null;
   consignmentLinkBl?: string | null;
+  consignmentLinkOther?: string | null;
   containers?: string | null;
   consignee?: string | null;
   notifyParty?: string | null;
@@ -356,9 +357,11 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
               <Text style={styles.textRegular}>
                 Containers : <Text style={styles.textBold}>{wrapLongWords(data.containers || "-", 25)}</Text>
               </Text>
-              <Text style={styles.textRegular}>
-                {wrapLongWords(formatConsigneeDisplay(data.consignee), 25)}
-              </Text>
+              {data.consignmentLinkOther?.trim() ? (
+                <Text style={styles.textBold}>
+                  {wrapLongWords(data.consignmentLinkOther, 25)}
+                </Text>
+              ) : null}
             </View>
           </View>
 
@@ -387,7 +390,19 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
             </View>
           </View>
 
-          {/* Row 4: Commodity description and quantity */}
+          {/* Row 4: Notify party */}
+          <View style={styles.tableRow}>
+            <View style={[styles.cell, { width: "31%" }]}>
+              <Text style={styles.textRegular}>Notify party</Text>
+            </View>
+            <View style={[styles.cellLast, { width: "69%" }]}>
+              <Text style={styles.textBold}>
+                {wrapLongWords(formatConsigneeDisplay(data.consignee) || "-", 25)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Row 5: Commodity description and quantity */}
           <View style={styles.tableRow}>
             <View style={[styles.cell, { width: "31%" }]}>
               <Text style={styles.textRegular}>Commodity description and quantity</Text>

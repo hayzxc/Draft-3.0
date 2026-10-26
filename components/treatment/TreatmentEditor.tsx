@@ -34,6 +34,7 @@ export const TreatmentEditor: React.FC<TreatmentEditorProps> = ({
       consignmentLinkPpk: "",
       consignmentLinkDo: "",
       consignmentLinkBl: "",
+      consignmentLinkOther: "",
       containers: "",
       consignee: "",
       sealNumbers: "",

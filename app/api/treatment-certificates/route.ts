@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
         consignmentLinkPpk: validatedData.consignmentLinkPpk || null,
         consignmentLinkDo: validatedData.consignmentLinkDo || null,
         consignmentLinkBl: validatedData.consignmentLinkBl || null,
+        consignmentLinkOther: validatedData.consignmentLinkOther || null,
         containers: validatedData.containers || null,
         consignee: validatedData.consignee || null,
         sealNumbers: validatedData.sealNumbers || null,

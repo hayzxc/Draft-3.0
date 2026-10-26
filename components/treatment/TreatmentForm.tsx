@@ -73,6 +73,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
     consignmentLinkPpk: initialData?.consignmentLinkPpk ?? "",
     consignmentLinkDo: initialData?.consignmentLinkDo ?? "",
     consignmentLinkBl: initialData?.consignmentLinkBl ?? "",
+    consignmentLinkOther: initialData?.consignmentLinkOther ?? "",
     containers: initialData?.containers ?? "",
     consignee: parsedConsignee.consignee,
     notifyParty: (initialData as any)?.notifyParty ?? parsedConsignee.notifyParty,
@@ -168,6 +169,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
         consignmentLinkPpk: value.consignmentLinkPpk || "",
         consignmentLinkDo: value.consignmentLinkDo || "",
         consignmentLinkBl: value.consignmentLinkBl || "",
+        consignmentLinkOther: value.consignmentLinkOther || "",
         containers: value.containers || "",
         consignee: combineConsigneeAndNotifyParty(value.consignee, (value as any).notifyParty),
         notifyParty: (value as any).notifyParty || "",
@@ -551,36 +553,28 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
 
         {/* Quarantine Reference Sub-Card */}
         <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/40 space-y-3">
-          <div>
-            <label htmlFor="consignmentLinkPpk" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              No. PTK Karantina (PPK)
-            </label>
-            <input
-              id="consignmentLinkPpk"
-              type="text"
-              placeholder="e.g. 301045S3B251982026101901929"
-              {...register("consignmentLinkPpk")}
-              className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs font-mono font-medium text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            />
-            <p className="mt-1 text-[10px] text-slate-500">Official Barantin PPK Quarantine reference code</p>
+          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            Data Konsinyasi (Bisa Disesuaikan / Freetext)
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="consignmentLinkDo" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                No. DO (Delivery Order)
+                Nomor DO / Related Document
               </label>
               <input
                 id="consignmentLinkDo"
                 type="text"
-                placeholder="e.g. 668235"
+                placeholder="e.g. 0668235"
                 {...register("consignmentLinkDo")}
                 className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Bisa lebih dari satu; pisahkan dengan koma.</p>
             </div>
+
             <div>
               <label htmlFor="consignmentLinkBl" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                No. BL (Bill of Lading)
+                Nomor BL (Bill of Lading)
               </label>
               <input
                 id="consignmentLinkBl"
@@ -589,6 +583,39 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
                 {...register("consignmentLinkBl")}
                 className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Bisa lebih dari satu; pisahkan dengan koma.</p>
+            </div>
+
+            <div>
+              <label htmlFor="consignmentLinkPpk" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                No. PTK Karantina (PPK / Barantin API Key)
+              </label>
+              <input
+                id="consignmentLinkPpk"
+                type="text"
+                placeholder="e.g. 301045S3B251982026101901929"
+                {...register("consignmentLinkPpk")}
+                className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs font-mono font-medium text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                Nomor PTK PPK Online Karantina. Digunakan sebagai key integrasi API.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="consignmentLinkOther" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Dokumen Lain (Keterangan Consignment)
+              </label>
+              <textarea
+                id="consignmentLinkOther"
+                rows={1}
+                placeholder="e.g. NO PL : 12312313"
+                {...register("consignmentLinkOther")}
+                className="w-full min-h-[40px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white resize-y"
+              />
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                Opsional — boleh dikosongkan.
+              </p>
             </div>
           </div>
         </div>
