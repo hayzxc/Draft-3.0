@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { certificateSchema, CertificateInput } from "@/lib/certificate-schema";
-import { handleFormKeyDown, handleFormPaste } from "@/lib/form-helpers";
+import { handleFormKeyDown, handleFormPaste, handleFormInput } from "@/lib/form-helpers";
 import { GasClearanceCertificateData } from "./CertificateDocument";
 import { generateQrDataUrl } from "@/lib/qr";
 import { FumigationFacilitySelect } from "@/components/treatment/FumigationFacilitySelect";
@@ -249,6 +249,7 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
       onSubmit={handleSubmit(onSubmit)}
       onKeyDown={handleFormKeyDown}
       onPaste={handleFormPaste}
+      onInput={handleFormInput}
       onFocus={(e) => {
         const target = e.target as HTMLElement;
         const id = target.id || (target as HTMLInputElement).name;

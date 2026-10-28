@@ -263,8 +263,11 @@ export const handleFormPaste = (e: React.ClipboardEvent<HTMLFormElement>) => {
     const rawData = e.clipboardData?.getData("text");
     if (!rawData) return;
 
-    // Intercept when pasted text contains linebreaks, tabs, or pipes that need formatting
-    if (/[\r\n\t|]/.test(rawData)) {
+    const isUppercase = target.classList.contains("uppercase");
+
+    // Intercept when pasted text contains linebreaks, tabs, or pipes that need formatting,
+    // OR when the target element requires uppercase transformation
+    if (/[\r\n\t|]/.test(rawData) || isUppercase) {
       e.preventDefault();
 
       const el = target as HTMLInputElement | HTMLTextAreaElement;
@@ -273,7 +276,10 @@ export const handleFormPaste = (e: React.ClipboardEvent<HTMLFormElement>) => {
       const val = el.value;
 
       const isSingleLine = el instanceof HTMLInputElement;
-      const cleaned = cleanPastedText(rawData, isSingleLine);
+      let cleaned = cleanPastedText(rawData, isSingleLine);
+      if (isUppercase) {
+        cleaned = cleaned.toUpperCase();
+      }
 
       const before = val.substring(0, start);
       const after = val.substring(end);
@@ -296,8 +302,23 @@ export const handleFormPaste = (e: React.ClipboardEvent<HTMLFormElement>) => {
 };
 
 /**
- * Clean input handler: lets browser input work cleanly without injecting pipe symbols.
+ * Clean input handler: ensures inputs with the 'uppercase' class store their values in uppercase
+ * and prevents lowercase characters from desyncing with the uppercase CSS display.
  */
-export const handleFormInput = (_e: React.FormEvent<HTMLFormElement>) => {
-  // Let native input work cleanly without injecting pipes
+export const handleFormInput = (e: React.FormEvent<HTMLFormElement>) => {
+  const target = e.target as HTMLElement;
+  if (
+    (target instanceof HTMLInputElement &&
+      (target.type === "text" || !target.type || target.type === "search")) ||
+    target instanceof HTMLTextAreaElement
+  ) {
+    if (target.classList.contains("uppercase")) {
+      const el = target as HTMLInputElement | HTMLTextAreaElement;
+      const upper = el.value.toUpperCase();
+      if (el.value !== upper) {
+        const start = el.selectionStart;
+        setElementNativeValue(el, upper, start ?? undefined);
+      }
+    }
+  }
 };

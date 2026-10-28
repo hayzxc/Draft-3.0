@@ -240,6 +240,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
       );
       const payload: any = {
         ...data,
+        commodityDescription: data.commodityDescription || null,
         consignee: combinedConsignee || null,
         qrCodeDataUrl,
       };
@@ -801,7 +802,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
             rows={3}
             placeholder="e.g. 3X20' 37 PALLETS = 1,985 PCS = 57.8406 M3 OF MERBAU E2E (INTSIA BIJUGA)"
             {...register("commodityDescription")}
-            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs font-semibold text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm uppercase leading-relaxed"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs font-semibold text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm leading-relaxed"
           />
           {errors.commodityDescription && (
             <p className="mt-1 text-xs text-rose-500">{errors.commodityDescription.message}</p>
