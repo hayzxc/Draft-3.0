@@ -26,67 +26,26 @@ export const cleanPastedText = (rawText: string, isSingleLine = false): string =
       .trim();
   }
 
+  // Multi-line inputs (Textarea): preserve explicit line breaks (\n) for alinea baru
   const rawLines = normalized.split("\n");
-  const paragraphs: string[] = [];
-  let currentParagraphWords: string[] = [];
-
-  const flushCurrentParagraph = () => {
-    if (currentParagraphWords.length > 0) {
-      paragraphs.push(currentParagraphWords.join(" "));
-      currentParagraphWords = [];
-    }
-  };
-
-  for (let i = 0; i < rawLines.length; i++) {
-    const rawLine = rawLines[i];
-    // Replace pipes and tabs with space within this line
-    const cleanedLine = rawLine
+  const cleanedLines = rawLines.map((line) =>
+    line
       .replace(/\|+/g, " ")
       .replace(/\t+/g, " ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
+      .replace(/[ \t]{2,}/g, " ")
+      .trim()
+  );
 
-    // If line is empty, it marks an explicit paragraph break (alinea baru from Shift + Enter or blank line)
-    if (!cleanedLine) {
-      flushCurrentParagraph();
-      continue;
-    }
-
-    currentParagraphWords.push(cleanedLine);
-  }
-
-  flushCurrentParagraph();
-
-  return paragraphs.join("\n");
+  return cleanedLines.join("\n").trim();
 };
 
 /**
- * Formats consignee & notify party text for certificate display (PDF, HTML Preview, and DOCX):
- * - Prepends "CONSIGNEE : " if not already present.
- * - Directly continues to NOTIFY PARTY without adding a new alinea (layout memanjang).
- * - Strips any stray pipes ("|") and joins newlines before NOTIFY PARTY with a single space.
+ * Formats consignee text for display.
+ * Strips pipes and cleans line spacing while preserving intentional newlines.
  */
 export const formatConsigneeDisplay = (consigneeText: string | null | undefined): string => {
   if (!consigneeText) return "";
   let text = cleanPastedText(consigneeText, false);
-  if (!text) return "";
-
-  // Merge any newline into continuous stream with single space
-  text = text.replace(/[\r\n]+/g, " ");
-
-  // Normalize CONSIGNEE prefix
-  if (/^consignee\s*:/i.test(text)) {
-    text = text.replace(/^consignee\s*:\s*/i, "CONSIGNEE : ");
-  } else if (!/^consignee/i.test(text)) {
-    text = `CONSIGNEE : ${text}`;
-  }
-
-  // Normalize NOTIFY PARTY prefix spacing (e.g. "NOTIFY PARTY : ")
-  text = text.replace(/\bnotify\s*party\s*:\s*/gi, "NOTIFY PARTY : ");
-
-  // Collapse accidental multiple spaces
-  text = text.replace(/[ \t]{2,}/g, " ").trim();
-
   return text;
 };
 
@@ -172,18 +131,16 @@ export const setElementNativeValue = (
 
 /**
  * Handles Enter and Shift + Enter key presses inside form inputs:
- * - Shift + Enter: Inserts a newline ('\n') to create an alinea baru (new paragraph).
+ * - Enter or Shift + Enter in textareas: Inserts a newline ('\n') to create an alinea baru (new paragraph).
  * - Plain Enter in single-line inputs: Prevents unintended form submission.
- * - Plain Enter in textareas: Inserts a single space to continue typing inline (layout memanjang),
- *   keeping text flow continuous without breaking into a new alinea.
  */
 export const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
   const target = e.target as HTMLElement;
 
   if (e.key === "Enter") {
-    // 1. Shift + Enter: Explicitly creates an alinea baru (new paragraph) in textareas
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      if (target instanceof HTMLTextAreaElement) {
+    // 1. Textareas: both Enter and Shift + Enter create an alinea baru (\n)
+    if (target instanceof HTMLTextAreaElement) {
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
         const start = target.selectionStart ?? target.value.length;
         const end = target.selectionEnd ?? target.value.length;
@@ -193,50 +150,16 @@ export const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
         typewriterAudio.playCarriageReturn();
         return;
       }
-      if (
-        target instanceof HTMLInputElement &&
-        (target.type === "text" || !target.type || target.type === "search")
-      ) {
-        e.preventDefault();
-        return;
-      }
     }
 
-    // 2. Plain Enter (without Shift):
-    if (!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      // In single-line inputs, prevent accidental submit
-      if (
-        target instanceof HTMLInputElement &&
-        (target.type === "text" || !target.type || target.type === "search")
-      ) {
-        e.preventDefault();
-        typewriterAudio.playCarriageReturn();
-        return;
-      }
-
-      // In textareas, Enter inserts a space to maintain continuous (memanjang) layout
-      if (target instanceof HTMLTextAreaElement) {
-        e.preventDefault();
-        const start = target.selectionStart ?? target.value.length;
-        const end = target.selectionEnd ?? target.value.length;
-        const val = target.value;
-        const before = val.substring(0, start);
-        const after = val.substring(end);
-
-        const needSpace =
-          before.length > 0 &&
-          !before.endsWith(" ") &&
-          !before.endsWith("\n") &&
-          !after.startsWith(" ");
-        const insertText = needSpace ? " " : "";
-
-        if (insertText || start !== end) {
-          const nextValue = before + insertText + after;
-          setElementNativeValue(target, nextValue, start + insertText.length);
-          typewriterAudio.playKeyClick();
-        }
-        return;
-      }
+    // 2. Single-line inputs: prevent unintended form submission
+    if (
+      target instanceof HTMLInputElement &&
+      (target.type === "text" || !target.type || target.type === "search")
+    ) {
+      e.preventDefault();
+      typewriterAudio.playCarriageReturn();
+      return;
     }
   } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
     // Play authentic typewriter key click sound for all printable characters, Backspace, and Delete

@@ -14,7 +14,7 @@ import {
 } from "docx";
 import { format } from "date-fns";
 import { CERTIFICATE_CONSTANTS } from "@/lib/certificate-constants";
-import { cleanPastedText, formatConsigneeDisplay } from "@/lib/form-helpers";
+import { cleanPastedText, formatConsigneeDisplay, parseConsigneeAndNotifyParty } from "@/lib/form-helpers";
 import { TreatmentCertificateData } from "@/components/treatment/TreatmentDocument";
 import { generateQrDataUrl } from "@/lib/qr";
 import { createGasClearanceDocxElements } from "@/lib/gas-clearance-docx";
@@ -453,7 +453,32 @@ export async function createTreatmentDocxDocument(
                 ],
               }),
 
-              // Row 4: Notify party
+              // Row 4: Consignee
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 3269, type: WidthType.DXA },
+                    borders: cellBorders,
+                    margins: cellMargins,
+                    children: [createP("Consignee", false, "000000", 14)],
+                  }),
+                  new TableCell({
+                    columnSpan: 3,
+                    width: { size: 7277, type: WidthType.DXA },
+                    borders: cellBorders,
+                    margins: cellMargins,
+                    children: createMultiLineParagraphs(
+                      data.notifyParty !== undefined && data.notifyParty !== null
+                        ? data.consignee
+                        : parseConsigneeAndNotifyParty(data.consignee).consignee,
+                      true,
+                      14
+                    ),
+                  }),
+                ],
+              }),
+
+              // Row 5: Notify party
               new TableRow({
                 children: [
                   new TableCell({
@@ -467,19 +492,13 @@ export async function createTreatmentDocxDocument(
                     width: { size: 7277, type: WidthType.DXA },
                     borders: cellBorders,
                     margins: cellMargins,
-                    children: [
-                      new Paragraph({
-                        spacing: { before: 0, after: 15, line: 215 },
-                        children: [
-                          new TextRun({
-                            text: formatConsigneeDisplay(data.consignee) || "-",
-                            bold: true,
-                            size: 14,
-                            font: FONT_FAMILY,
-                          }),
-                        ],
-                      }),
-                    ],
+                    children: createMultiLineParagraphs(
+                      data.notifyParty !== undefined && data.notifyParty !== null
+                        ? data.notifyParty
+                        : parseConsigneeAndNotifyParty(data.consignee).notifyParty,
+                      true,
+                      14
+                    ),
                   }),
                 ],
               }),

@@ -406,7 +406,11 @@ export const GasClearancePdfPage: React.FC<{ data: GasClearanceCertificateData }
             </View>
             <Text style={styles.fieldColon}>:</Text>
             <View style={styles.fieldValueBox}>
-              <Text style={styles.fieldValueBold}>{data.commodity || "-"}</Text>
+              {(data.commodity || "-").split("\n").map((line, idx) => (
+                <Text key={idx} style={styles.fieldValueBold}>
+                  {line || " "}
+                </Text>
+              ))}
             </View>
           </View>
 

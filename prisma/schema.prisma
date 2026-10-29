@@ -48,6 +48,7 @@ model TreatmentCertificate {
   consignmentLinkOther         String?
   containers                   String?
   consignee                    String?
+  notifyParty                  String?
   sealNumbers                  String?
   carrierVessel                String?
   clientNameAddress            String?

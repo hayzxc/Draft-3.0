@@ -75,7 +75,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
     consignmentLinkBl: initialData?.consignmentLinkBl ?? "",
     consignmentLinkOther: initialData?.consignmentLinkOther ?? "",
     containers: initialData?.containers ?? "",
-    consignee: parsedConsignee.consignee,
+    consignee: (initialData as any)?.notifyParty ? (initialData?.consignee ?? "") : parsedConsignee.consignee,
     notifyParty: (initialData as any)?.notifyParty ?? parsedConsignee.notifyParty,
     sealNumbers: initialData?.sealNumbers ?? "",
     carrierVessel: initialData?.carrierVessel ?? "",
@@ -171,7 +171,7 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
         consignmentLinkBl: value.consignmentLinkBl || "",
         consignmentLinkOther: value.consignmentLinkOther || "",
         containers: value.containers || "",
-        consignee: combineConsigneeAndNotifyParty(value.consignee, (value as any).notifyParty),
+        consignee: value.consignee || "",
         notifyParty: (value as any).notifyParty || "",
         sealNumbers: value.sealNumbers || "",
         carrierVessel: value.carrierVessel || "",
@@ -234,17 +234,13 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
           : "/api/treatment-certificates";
       const method = isEditing ? "PATCH" : "POST";
 
-      const combinedConsignee = combineConsigneeAndNotifyParty(
-        data.consignee,
-        (data as any).notifyParty
-      );
       const payload: any = {
         ...data,
+        consignee: data.consignee || null,
+        notifyParty: (data as any).notifyParty || null,
         commodityDescription: data.commodityDescription || null,
-        consignee: combinedConsignee || null,
         qrCodeDataUrl,
       };
-      delete payload.notifyParty;
 
       const res = await fetch(url, {
         method,
@@ -661,12 +657,12 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
                 Penerima barang (nama perusahaan &amp; rincian alamat)
               </span>
             </label>
-            <span className="text-[10px] text-slate-400">Shift + Enter untuk alinea baru</span>
+            <span className="text-[10px] text-slate-400">Enter untuk alinea baru</span>
           </div>
           <textarea
             id="consignee"
             rows={3}
-            placeholder="Type or paste consignee details (e.g. BUNNINGS GROUP LIMITED BOTANICCA 3 - LEVEL 2 EAST TOWER 570 SWAN STREET, BURNLEY VIC 3121 AUSTRALIA)"
+            placeholder="Type or paste consignee details (e.g. TO ORDER)"
             {...register("consignee")}
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm leading-relaxed"
           />
@@ -695,12 +691,12 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
               >
                 + Same as Consignee
               </button>
-              <span className="text-[10px] text-slate-400">Shift + Enter untuk alinea baru</span>
+              <span className="text-[10px] text-slate-400">Enter untuk alinea baru</span>
             </div>
           </div>
           <textarea
             id="notifyParty"
-            rows={2}
+            rows={3}
             placeholder="e.g. SAME AS CONSIGNEE atau nama pihak ketiga & rincian alamat..."
             {...register("notifyParty" as any)}
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm leading-relaxed"
@@ -751,20 +747,23 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
 
         {/* Client Name and Address */}
         <div>
-          <label htmlFor="clientNameAddress" className="block mb-1.5">
-            <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-              Client Name and Address
-            </span>
-            <span className="block text-[10px] text-slate-500 dark:text-slate-400 italic">
-              Nama dan alamat klien pemesan fumigasi
-            </span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="clientNameAddress" className="block">
+              <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+                Client Name and Address
+              </span>
+              <span className="block text-[10px] text-slate-500 dark:text-slate-400 italic">
+                Nama dan alamat klien pemesan fumigasi
+              </span>
+            </label>
+            <span className="text-[10px] text-slate-400">Enter untuk alinea baru</span>
+          </div>
           <textarea
             id="clientNameAddress"
-            rows={2}
-            placeholder="e.g. SONIA LINTAS BENUA, SURABAYA"
+            rows={4}
+            placeholder="e.g. PT. SUPA SURYA NIAGA&#10;SINAR GEDANGAN BLOK C8-C9&#10;GEMURUNG, GEDANGAN, SIDOARJO&#10;61254, EAST JAVA, INDONESIA"
             {...register("clientNameAddress")}
-            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm"
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm leading-relaxed"
           />
           {errors.clientNameAddress && (
             <p className="mt-1 text-xs text-rose-500">{errors.clientNameAddress.message}</p>
@@ -789,18 +788,21 @@ const TreatmentFormComponent: React.FC<TreatmentFormProps> = ({
 
         {/* Commodity Description */}
         <div>
-          <label htmlFor="commodityDescription" className="block mb-1.5">
-            <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-              Commodity Description and Quantity
-            </span>
-            <span className="block text-[10px] text-slate-500 dark:text-slate-400 italic">
-              Deskripsi lengkap komoditas, jumlah pallet/karton, dan volume (m³)
-            </span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="commodityDescription" className="block">
+              <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+                Commodity Description and Quantity
+              </span>
+              <span className="block text-[10px] text-slate-500 dark:text-slate-400 italic">
+                Deskripsi lengkap komoditas, jumlah pallet/karton, dan volume (m³)
+              </span>
+            </label>
+            <span className="text-[10px] text-slate-400">Enter untuk alinea baru</span>
+          </div>
           <textarea
             id="commodityDescription"
-            rows={3}
-            placeholder="e.g. 3X20' 37 PALLETS = 1,985 PCS = 57.8406 M3 OF MERBAU E2E (INTSIA BIJUGA)"
+            rows={5}
+            placeholder="e.g. 1 X 20' FCL&#10;150 CARTONS OF CLOVES WHOLE @20 KG NET&#10;HS CODE : 0907.10.00&#10;NW : 3,000.00 KGS&#10;GW : 3,150.00 KGS"
             {...register("commodityDescription")}
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/90 p-3 text-xs font-semibold text-slate-900 dark:text-white hover:bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition-all shadow-inner-sm leading-relaxed"
           />

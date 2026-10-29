@@ -37,6 +37,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         consignmentLinkOther: (certificate as any).consignmentLinkOther,
         containers: certificate.containers,
         consignee: certificate.consignee,
+        notifyParty: certificate.notifyParty,
         sealNumbers: certificate.sealNumbers,
         carrierVessel: certificate.carrierVessel,
         clientNameAddress: certificate.clientNameAddress,

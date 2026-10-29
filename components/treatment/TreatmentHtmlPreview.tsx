@@ -3,7 +3,7 @@
 import React from "react";
 import { format } from "date-fns";
 import { CERTIFICATE_CONSTANTS } from "@/lib/certificate-constants";
-import { cleanPastedText, formatConsigneeDisplay } from "@/lib/form-helpers";
+import { cleanPastedText, formatConsigneeDisplay, parseConsigneeAndNotifyParty } from "@/lib/form-helpers";
 import { TreatmentCertificateData } from "./TreatmentDocument";
 import { TypewriterText } from "./TypewriterText";
 import { GasClearanceHtmlPreview } from "@/components/certificate/GasClearanceHtmlPreview";
@@ -192,22 +192,53 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
           </div>
         </div>
 
-        {/* Row 4: Notify party */}
-        <div className="flex border-b border-black items-stretch w-full">
-          <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
-            Notify party
-          </div>
-          <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug">
-            <TypewriterText
-              text={formatConsigneeDisplay(data.consignee)}
-              active={activeField === "consignee" || activeField === "notifyParty"}
-              bold={true}
-              placeholder="-"
-            />
-          </div>
-        </div>
+        {/* Row 4: Consignee */}
+        {(() => {
+          const parsed = parseConsigneeAndNotifyParty(data.consignee);
+          const displayConsignee =
+            data.notifyParty !== undefined && data.notifyParty !== null
+              ? data.consignee
+              : parsed.consignee;
+          const displayNotifyParty =
+            data.notifyParty !== undefined && data.notifyParty !== null
+              ? data.notifyParty
+              : parsed.notifyParty;
 
-        {/* Row 5: Commodity description and quantity */}
+          return (
+            <>
+              <div className="flex border-b border-black items-stretch w-full">
+                <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
+                  Consignee
+                </div>
+                <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug whitespace-pre-line">
+                  <TypewriterText
+                    text={formatContinuousDisplay(displayConsignee)}
+                    active={activeField === "consignee"}
+                    bold={true}
+                    placeholder="-"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Notify party */}
+              <div className="flex border-b border-black items-stretch w-full">
+                <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
+                  Notify party
+                </div>
+                <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug whitespace-pre-line">
+                  <TypewriterText
+                    text={formatContinuousDisplay(displayNotifyParty)}
+                    active={activeField === "notifyParty"}
+                    bold={true}
+                    placeholder="-"
+                  />
+                </div>
+              </div>
+            </>
+          );
+        })()}
+
+        {/* Row 6: Commodity description and quantity */}
         <div className="flex border-b border-black items-stretch w-full">
           <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
             Commodity description and quantity

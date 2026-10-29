@@ -2,7 +2,7 @@ import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { format } from "date-fns";
 import { CERTIFICATE_CONSTANTS } from "@/lib/certificate-constants";
-import { cleanPastedText, formatConsigneeDisplay } from "@/lib/form-helpers";
+import { cleanPastedText, formatConsigneeDisplay, parseConsigneeAndNotifyParty } from "@/lib/form-helpers";
 import { GasClearancePdfPage } from "@/components/certificate/CertificateDocument";
 import { mapTreatmentToGasClearanceData } from "@/lib/treatment-bundle-helpers";
 
@@ -293,10 +293,30 @@ const formatContinuousDisplay = (text: string | null | undefined): string => {
   return cleanPastedText(text, false);
 };
 
+const renderMultiLineText = (text: string | null | undefined, maxWordLen = 25) => {
+  const cleaned = formatContinuousDisplay(text);
+  if (!cleaned) return <Text style={styles.textBold}>-</Text>;
+  const lines = cleaned.split("\n");
+  return lines.map((line, idx) => (
+    <Text key={idx} style={styles.textBold}>
+      {wrapLongWords(line, maxWordLen) || " "}
+    </Text>
+  ));
+};
+
 export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = ({
   data,
 }) => {
   const verificationLink = data.verificationUrl?.trim() || "";
+  const parsedConsignee = parseConsigneeAndNotifyParty(data.consignee);
+  const displayConsignee =
+    data.notifyParty !== undefined && data.notifyParty !== null
+      ? data.consignee
+      : parsedConsignee.consignee;
+  const displayNotifyParty =
+    data.notifyParty !== undefined && data.notifyParty !== null
+      ? data.notifyParty
+      : parsedConsignee.notifyParty;
 
   return (
     <Document title={`Treatment-Cert-${data.certificateNumber || "Draft"}`}>
@@ -386,29 +406,37 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
               <Text style={styles.textRegular}>Client name and address</Text>
             </View>
             <View style={[styles.cellLast, { width: "69%" }]}>
-              <Text style={styles.textBold}>{wrapLongWords(formatContinuousDisplay(data.clientNameAddress) || "-", 25)}</Text>
+              {renderMultiLineText(data.clientNameAddress)}
             </View>
           </View>
 
-          {/* Row 4: Notify party */}
+          {/* Row 4: Consignee */}
+          <View style={styles.tableRow}>
+            <View style={[styles.cell, { width: "31%" }]}>
+              <Text style={styles.textRegular}>Consignee</Text>
+            </View>
+            <View style={[styles.cellLast, { width: "69%" }]}>
+              {renderMultiLineText(displayConsignee)}
+            </View>
+          </View>
+
+          {/* Row 5: Notify party */}
           <View style={styles.tableRow}>
             <View style={[styles.cell, { width: "31%" }]}>
               <Text style={styles.textRegular}>Notify party</Text>
             </View>
             <View style={[styles.cellLast, { width: "69%" }]}>
-              <Text style={styles.textBold}>
-                {wrapLongWords(formatConsigneeDisplay(data.consignee) || "-", 25)}
-              </Text>
+              {renderMultiLineText(displayNotifyParty)}
             </View>
           </View>
 
-          {/* Row 5: Commodity description and quantity */}
+          {/* Row 6: Commodity description and quantity */}
           <View style={styles.tableRow}>
             <View style={[styles.cell, { width: "31%" }]}>
               <Text style={styles.textRegular}>Commodity description and quantity</Text>
             </View>
             <View style={[styles.cellLast, { width: "69%" }]}>
-              <Text style={styles.textBold}>{wrapLongWords(formatContinuousDisplay(data.commodityDescription) || "-", 25)}</Text>
+              {renderMultiLineText(data.commodityDescription)}
             </View>
           </View>
 
