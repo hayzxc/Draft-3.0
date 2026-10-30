@@ -373,7 +373,16 @@ export async function createGasClearanceDocxElements(
     borders: noTableBorders,
     columnWidths: [3800, 300, 6446],
     rows: [
-      makeFieldRow("Nama komoditas/media pembawa", "Commodity/article", data.commodity || "-"),
+      makeFieldRow(
+        "Nama komoditas/media pembawa",
+        "Commodity/article",
+        data.commodity
+          ? data.commodity
+              .replace(/[\r\n]+/g, " | ")
+              .replace(/\s*\|(?:\s*\|)*\s*/g, " | ")
+              .trim()
+          : "-"
+      ),
       makeFieldRow("Nomor peti kemas", "Container number", data.containerNumber || "-"),
       makeFieldRow("Alat angkut", "Carrier/vessel", data.carrierVessel || "-"),
       makeFieldRow("Area / Lokasi fumigasi", "Area/Location of Fumigation", data.fumigationArea || "-"),

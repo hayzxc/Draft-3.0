@@ -20,7 +20,11 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { certificateSchema, CertificateInput } from "@/lib/certificate-schema";
-import { handleFormKeyDown, handleFormPaste, handleFormInput } from "@/lib/form-helpers";
+import {
+  handleGasClearanceFormKeyDown,
+  handleGasClearanceFormPaste,
+  handleFormInput,
+} from "@/lib/form-helpers";
 import { GasClearanceCertificateData } from "./CertificateDocument";
 import { generateQrDataUrl } from "@/lib/qr";
 import { FumigationFacilitySelect } from "@/components/treatment/FumigationFacilitySelect";
@@ -247,8 +251,8 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      onKeyDown={handleFormKeyDown}
-      onPaste={handleFormPaste}
+      onKeyDown={handleGasClearanceFormKeyDown}
+      onPaste={handleGasClearanceFormPaste}
       onInput={handleFormInput}
       onFocus={(e) => {
         const target = e.target as HTMLElement;
@@ -412,7 +416,7 @@ const CertificateFormComponent: React.FC<CertificateFormProps> = ({
             </span>
           </div>
           <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 hidden sm:inline">
-            Shift + Enter untuk baris baru
+            Enter untuk pemisah | (layout memanjang)
           </span>
         </div>
 
