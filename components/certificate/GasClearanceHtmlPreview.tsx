@@ -149,16 +149,9 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
             <div className="italic text-slate-600">Commodity/article</div>
           </div>
           <div className="w-[3%] text-center font-bold">:</div>
-          <div className="w-[59%] font-bold uppercase leading-snug">
+          <div className="w-[59%] font-bold uppercase whitespace-pre-line leading-snug">
             <TypewriterText
-              text={
-                data.commodity
-                  ? data.commodity
-                      .replace(/[\r\n]+/g, " | ")
-                      .replace(/\s*\|(?:\s*\|)*\s*/g, " | ")
-                      .trim()
-                  : ""
-              }
+              text={data.commodity}
               active={activeField === "commodity"}
               placeholder="-"
             />

@@ -350,19 +350,19 @@ export async function createGasClearanceDocxElements(
         new TableCell({
           width: { size: 6446, type: WidthType.DXA },
           borders: noCellBorders,
-          children: [
+          children: (value || "-").split("\n").map((line, idx, arr) =>
             new Paragraph({
-              spacing: { after: 40 },
+              spacing: { after: idx === arr.length - 1 ? 40 : 10 },
               children: [
                 new TextRun({
-                  text: value,
+                  text: line || " ",
                   font: FONT_FAMILY,
                   bold: isBold,
                   size: 17,
                 }),
               ],
-            }),
-          ],
+            })
+          ),
         }),
       ],
     });
@@ -373,16 +373,7 @@ export async function createGasClearanceDocxElements(
     borders: noTableBorders,
     columnWidths: [3800, 300, 6446],
     rows: [
-      makeFieldRow(
-        "Nama komoditas/media pembawa",
-        "Commodity/article",
-        data.commodity
-          ? data.commodity
-              .replace(/[\r\n]+/g, " | ")
-              .replace(/\s*\|(?:\s*\|)*\s*/g, " | ")
-              .trim()
-          : "-"
-      ),
+      makeFieldRow("Nama komoditas/media pembawa", "Commodity/article", data.commodity || "-"),
       makeFieldRow("Nomor peti kemas", "Container number", data.containerNumber || "-"),
       makeFieldRow("Alat angkut", "Carrier/vessel", data.carrierVessel || "-"),
       makeFieldRow("Area / Lokasi fumigasi", "Area/Location of Fumigation", data.fumigationArea || "-"),
