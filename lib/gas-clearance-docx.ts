@@ -14,7 +14,13 @@ import {
 } from "docx";
 import { format } from "date-fns";
 import { GAS_CLEARANCE_STATIC_TEXT } from "@/lib/certificate-static-text";
-import { GasClearanceCertificateData } from "@/components/certificate/CertificateDocument";
+import {
+  GasClearanceCertificateData,
+  shouldShowGasClearanceAttachment,
+  parseContainersJson,
+  formatPage1CommodityLines,
+  GasClearanceContainerItem,
+} from "@/components/certificate/CertificateDocument";
 import { generateQrDataUrl } from "@/lib/qr";
 
 const PRIMARY_BLUE = "0047AB";
@@ -118,13 +124,37 @@ export async function createGasClearanceDocxElements(
   const letterheadBytes = await resolveImageBytes(data.logoImageUrl || "/images/letterhead.jpg");
   const signatureBytes = await resolveImageBytes(data.fumigatorSignatureUrl);
 
-  const gasReading =
+  const isAttachmentActive = shouldShowGasClearanceAttachment(data);
+  const containers = parseContainersJson(
+    data.containersJson,
+    data.containerNumber,
+    data.sealNumber,
+    data.gasLevelPpm
+  );
+
+  const page1CommodityText = isAttachmentActive
+    ? formatPage1CommodityLines(data.commodity, true).join("\n")
+    : (data.commodity || "-");
+
+  const containerDisplay = isAttachmentActive
+    ? `${containers.length || 1} containers (see Attachment)`
+    : (data.containerNumber || "-");
+
+  let gasReading =
     data.gasLevelReading?.trim() ||
     (data.gasLevelPpm !== null && data.gasLevelPpm !== undefined && data.gasLevelPpm !== ""
       ? (data.containerNumber?.trim()
           ? `${data.containerNumber.trim()}: ${data.gasLevelPpm} ppm`
           : `${data.gasLevelPpm} ppm`)
       : "");
+
+  if (isAttachmentActive) {
+    const count = containers.length || 1;
+    const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
+    const minPpm = ppms.length > 0 ? Math.min(...ppms) : (Number(data.gasLevelPpm) || 0);
+    const maxPpm = ppms.length > 0 ? Math.max(...ppms) : (Number(data.gasLevelPpm) || 0);
+    gasReading = `${count} containers \u2014 ${minPpm}\u2013${maxPpm} ppm (see Attachment)`;
+  }
 
   const noTableBorders = {
     top: { style: BorderStyle.NONE, size: 0, color: "auto" },
@@ -214,6 +244,17 @@ export async function createGasClearanceDocxElements(
                   new TextRun({ text: data.serialNo || "-", font: FONT_FAMILY, bold: true, size: 17 }),
                 ],
               }),
+              ...(data.noticeRef?.trim()
+                ? [
+                    new Paragraph({
+                      spacing: { after: 20 },
+                      children: [
+                        new TextRun({ text: "Ref. Notice / Notice Ref. : ", font: FONT_FAMILY, size: 17 }),
+                        new TextRun({ text: data.noticeRef.trim(), font: FONT_FAMILY, bold: true, size: 17 }),
+                      ],
+                    }),
+                  ]
+                : []),
               new Paragraph({
                 spacing: { after: 20 },
                 children: [
@@ -373,8 +414,8 @@ export async function createGasClearanceDocxElements(
     borders: noTableBorders,
     columnWidths: [3800, 300, 6446],
     rows: [
-      makeFieldRow("Nama komoditas/media pembawa", "Commodity/article", data.commodity || "-"),
-      makeFieldRow("Nomor peti kemas", "Container number", data.containerNumber || "-"),
+      makeFieldRow("Nama komoditas/media pembawa", "Commodity/article", page1CommodityText),
+      makeFieldRow("Nomor peti kemas", "Container number", containerDisplay),
       makeFieldRow("Alat angkut", "Carrier/vessel", data.carrierVessel || "-"),
       makeFieldRow("Area / Lokasi fumigasi", "Area/Location of Fumigation", data.fumigationArea || "-"),
       makeFieldRow(

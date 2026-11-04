@@ -4,7 +4,13 @@ import React from "react";
 import { format } from "date-fns";
 import { GAS_CLEARANCE_STATIC_TEXT } from "@/lib/certificate-static-text";
 import { cleanPastedText } from "@/lib/form-helpers";
-import { GasClearanceCertificateData } from "./CertificateDocument";
+import {
+  GasClearanceCertificateData,
+  parseContainersJson,
+  shouldShowGasClearanceAttachment,
+  formatPage1CommodityLines,
+  GasClearanceContainerItem,
+} from "./CertificateDocument";
 import { TypewriterText } from "@/components/treatment/TypewriterText";
 
 interface GasClearanceHtmlPreviewProps {
@@ -39,11 +45,18 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
   activeField = null,
 }) => {
   const verificationLink = data.verificationUrl?.trim() || "";
-
   const logoUrl = data.logoImageUrl || "/images/letterhead.jpg";
 
-  // Gas level reading calculation: empty if not filled
-  const gasReading =
+  const isAttachmentActive = shouldShowGasClearanceAttachment(data);
+  const containers = parseContainersJson(
+    data.containersJson,
+    data.containerNumber,
+    data.sealNumber,
+    data.gasLevelPpm
+  );
+
+  // Gas level reading calculation
+  let gasReading =
     data.gasLevelReading?.trim() ||
     (data.gasLevelPpm !== null && data.gasLevelPpm !== undefined && data.gasLevelPpm !== ""
       ? (data.containerNumber?.trim()
@@ -51,8 +64,31 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
           : `${data.gasLevelPpm} ppm`)
       : "");
 
+  if (isAttachmentActive) {
+    const count = containers.length || 1;
+    const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
+    const minPpm = ppms.length > 0 ? Math.min(...ppms) : (Number(data.gasLevelPpm) || 0);
+    const maxPpm = ppms.length > 0 ? Math.max(...ppms) : (Number(data.gasLevelPpm) || 0);
+    gasReading = `${count} containers \u2014 ${minPpm}\u2013${maxPpm} ppm (see Attachment)`;
+  }
+
+  const containerDisplay = isAttachmentActive
+    ? `${containers.length || 1} containers (see Attachment)`
+    : (data.containerNumber || "");
+
+  const page1CommodityLines = formatPage1CommodityLines(data.commodity, isAttachmentActive);
+  const page1CommodityText = page1CommodityLines.join("\n");
+
+  // Group containers into pairs for dual 4-column layout on Page 2
+  const containerRows: [GasClearanceContainerItem | null, GasClearanceContainerItem | null][] = [];
+  const totalContainers = Math.max(containers.length, 1);
+  for (let i = 0; i < totalContainers; i += 2) {
+    containerRows.push([containers[i] || null, containers[i + 1] || null]);
+  }
+
   return (
-    <div className="mx-auto w-full max-w-[794px] min-h-[1123px] bg-white text-black shadow-[0_15px_50px_rgba(0,0,0,0.18)] border border-slate-300 p-8 md:p-12 font-sans text-[11px] leading-tight select-none rounded-sm transition-all duration-150 flex flex-col justify-between">
+    <>
+      <div className="mx-auto w-full max-w-[794px] min-h-[1123px] bg-white text-black shadow-[0_15px_50px_rgba(0,0,0,0.18)] border border-slate-300 p-8 md:p-12 font-sans text-[11px] leading-tight select-none rounded-sm transition-all duration-150 flex flex-col justify-between">
       <div className="flex-1">
         {/* 1. Official Letterhead Header */}
         <div className="w-full mb-2">
@@ -78,6 +114,17 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
               className="font-bold text-black"
             />
           </div>
+          {data.noticeRef ? (
+            <div>
+              <span className="font-normal text-slate-800">Ref. Notice / Notice Ref. : </span>
+              <TypewriterText
+                text={data.noticeRef}
+                active={activeField === "noticeRef"}
+                placeholder="-"
+                className="font-bold text-black"
+              />
+            </div>
+          ) : null}
           <div>
             <div className="font-normal text-slate-800">Nomor GC / GC Number :</div>
             <div className="font-bold text-black text-[11px] break-all">
@@ -151,7 +198,7 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
           <div className="w-[3%] text-center font-bold">:</div>
           <div className="w-[59%] font-bold uppercase whitespace-pre-line leading-snug">
             <TypewriterText
-              text={data.commodity}
+              text={isAttachmentActive ? page1CommodityText : data.commodity}
               active={activeField === "commodity"}
               placeholder="-"
             />
@@ -167,7 +214,7 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
           <div className="w-[3%] text-center font-bold">:</div>
           <div className="w-[59%] font-bold uppercase">
             <TypewriterText
-              text={data.containerNumber}
+              text={containerDisplay}
               active={activeField === "containerNumber"}
               placeholder="-"
             />
@@ -349,7 +396,7 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
             <div className="text-[9px] text-slate-400 text-center font-mono">QR Code</div>
           )}
         </div>
-        <div className="space-y-0.5 leading-tight">
+        <div className="space-y-0.5 leading-tight flex-1">
           <div className="font-bold text-[10px] text-black">
             {GAS_CLEARANCE_STATIC_TEXT.barantinText}
           </div>
@@ -367,8 +414,103 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
             </div>
           ) : null}
         </div>
+        {isAttachmentActive ? (
+          <div className="text-[10px] text-slate-500 font-sans shrink-0 self-end">
+            Page 1 of 2
+          </div>
+        ) : null}
       </div>
     </div>
+
+    {/* PAGE 2: ATTACHMENT (When Attachment is Active) */}
+    {isAttachmentActive && (
+      <div className="mx-auto w-full max-w-[794px] min-h-[1123px] bg-white text-black shadow-[0_15px_50px_rgba(0,0,0,0.18)] border border-slate-300 p-8 md:p-12 font-sans text-[11px] leading-tight select-none rounded-sm transition-all duration-150 flex flex-col justify-between mt-8">
+        <div>
+          {/* Header */}
+          <div className="text-center mb-4">
+            <h2 className="text-[14px] font-bold text-[#004b91] tracking-wide uppercase">
+              ATTACHMENT — Consignment Details
+            </h2>
+            <p className="text-[10px] text-slate-700 mt-1">
+              GC No. <span className="font-semibold">{data.certificateNumber || "-"}</span> | Ref. Notice:{" "}
+              <span className="font-semibold">{data.noticeRef || "-"}</span> | Date issued:{" "}
+              <span className="font-semibold">{formatDate(data.certificateDate)}</span>
+            </p>
+          </div>
+
+          {/* Table: Dual 4-Column Layout */}
+          <div className="w-full border border-black mb-4 overflow-hidden">
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr className="border-b border-black bg-slate-50/50 font-bold text-black">
+                  <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                  <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                  <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                  <th className="border-r border-black p-1.5 w-[8%] text-center">TLV (ppm)</th>
+
+                  <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                  <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                  <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                  <th className="p-1.5 w-[8%] text-center">TLV (ppm)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {containerRows.map(([left, right], idx) => {
+                  const leftIdx = idx * 2 + 1;
+                  const rightIdx = idx * 2 + 2;
+                  const isLast = idx === containerRows.length - 1;
+
+                  return (
+                    <tr
+                      key={idx}
+                      className={`font-semibold ${!isLast ? "border-b border-black" : ""}`}
+                    >
+                      {/* Left */}
+                      <td className="border-r border-black p-1.5 text-center">{left ? leftIdx : ""}</td>
+                      <td className="border-r border-black p-1.5 uppercase">{left?.containerNumber || ""}</td>
+                      <td className="border-r border-black p-1.5 uppercase">{left?.sealNumber || ""}</td>
+                      <td className="border-r border-black p-1.5 text-center">
+                        {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
+                      </td>
+
+                      {/* Right */}
+                      <td className="border-r border-black p-1.5 text-center">{right ? rightIdx : ""}</td>
+                      <td className="border-r border-black p-1.5 uppercase">{right?.containerNumber || ""}</td>
+                      <td className="border-r border-black p-1.5 uppercase">{right?.sealNumber || ""}</td>
+                      <td className="p-1.5 text-center">
+                        {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Commodity / Article Section */}
+          <div className="mb-4">
+            <h3 className="text-[11px] font-bold text-[#004b91] mb-1">
+              Commodity / Article
+            </h3>
+            <div className="border border-black p-2.5 min-h-[140px] font-mono text-[9.5px] uppercase whitespace-pre-line leading-relaxed text-black">
+              {data.commodity || "-"}
+            </div>
+          </div>
+
+          {/* Legal Note */}
+          <div className="border-t border-black pt-2 text-[9.5px] text-slate-800 leading-normal">
+            This attachment is an integral part of certificate{" "}
+            <span className="font-bold">{data.certificateNumber || "-"}</span> and is issued because the details do not fit on the main page.
+          </div>
+        </div>
+
+        {/* Page 2 Footer */}
+        <div className="flex justify-end pt-3 text-[10px] text-slate-500 font-sans">
+          Page 2 of 2
+        </div>
+      </div>
+    )}
+  </>
   );
 };
 

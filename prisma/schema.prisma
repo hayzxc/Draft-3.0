@@ -20,8 +20,10 @@ model GasClearanceCertificate {
   certificateNumber     String?
   registrationNumber    String?   @default("ID0018MB")
   certificateDate       DateTime?
+  noticeRef             String?
   commodity             String?
   containerNumber       String?
+  sealNumber            String?
   carrierVessel         String?
   fumigationArea        String?
   fumigant              String?   @default("Methyl Bromide (CH3Br)")
@@ -29,6 +31,8 @@ model GasClearanceCertificate {
   completedAt           DateTime?
   gasLevelPpm           Decimal?  @default(0)
   gasLevelReading       String?
+  hasAttachment         Boolean?  @default(false)
+  containersJson        String?
   fumigatorName         String?
   fumigatorSignatureUrl String?
   verificationUrl       String?
