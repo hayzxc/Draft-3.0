@@ -3,7 +3,11 @@ import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/render
 import { format } from "date-fns";
 import { CERTIFICATE_CONSTANTS } from "@/lib/certificate-constants";
 import { cleanPastedText, formatConsigneeDisplay, parseConsigneeAndNotifyParty } from "@/lib/form-helpers";
-import { GasClearancePdfPage } from "@/components/certificate/CertificateDocument";
+import {
+  GasClearancePdfPage,
+  GasClearanceAttachmentPdfPage,
+  shouldShowGasClearanceAttachment,
+} from "@/components/certificate/CertificateDocument";
 import { mapTreatmentToGasClearanceData } from "@/lib/treatment-bundle-helpers";
 
 const PRIMARY_BLUE = "#0850A2";
@@ -317,6 +321,9 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
     data.notifyParty !== undefined && data.notifyParty !== null
       ? data.notifyParty
       : parsedConsignee.notifyParty;
+
+  const gcData = mapTreatmentToGasClearanceData(data);
+  const isGcAttachmentActive = shouldShowGasClearanceAttachment(gcData);
 
   return (
     <Document title={`Treatment-Cert-${data.certificateNumber || "Draft"}`}>
@@ -656,7 +663,10 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
         </View>
       </Page>
       {data.includeGasClearance !== false && (
-        <GasClearancePdfPage data={mapTreatmentToGasClearanceData(data)} />
+        <>
+          <GasClearancePdfPage data={gcData} isAttachmentActive={isGcAttachmentActive} />
+          {isGcAttachmentActive && <GasClearanceAttachmentPdfPage data={gcData} />}
+        </>
       )}
     </Document>
   );

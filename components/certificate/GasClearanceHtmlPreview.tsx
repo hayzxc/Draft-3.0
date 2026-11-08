@@ -11,6 +11,7 @@ import {
   formatPage1CommodityLines,
   GasClearanceContainerItem,
 } from "./CertificateDocument";
+import { splitContainerColumns, getGasSummary, getContainerSummary } from "@/lib/attachment/attachment";
 import { TypewriterText } from "@/components/treatment/TypewriterText";
 
 interface GasClearanceHtmlPreviewProps {
@@ -65,25 +66,31 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
       : "");
 
   if (isAttachmentActive) {
-    const count = containers.length || 1;
     const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
-    const minPpm = ppms.length > 0 ? Math.min(...ppms) : (Number(data.gasLevelPpm) || 0);
-    const maxPpm = ppms.length > 0 ? Math.max(...ppms) : (Number(data.gasLevelPpm) || 0);
-    gasReading = `${count} containers \u2014 ${minPpm}\u2013${maxPpm} ppm (see Attachment)`;
+    gasReading = getGasSummary(ppms.length > 0 ? ppms : [Number(data.gasLevelPpm) || 0]);
   }
 
   const containerDisplay = isAttachmentActive
-    ? `${containers.length || 1} containers (see Attachment)`
+    ? getContainerSummary(containers.length || 1)
     : (data.containerNumber || "");
 
   const page1CommodityLines = formatPage1CommodityLines(data.commodity, isAttachmentActive);
   const page1CommodityText = page1CommodityLines.join("\n");
 
-  // Group containers into pairs for dual 4-column layout on Page 2
+  const resolvedNoticeRef =
+    data.noticeRef && data.noticeRef !== "-"
+      ? data.noticeRef
+      : data.certificateNumber && data.certificateNumber.includes("/")
+      ? data.certificateNumber.split("/")[3] || "-"
+      : "-";
+
+  // Group containers using splitContainerColumns for dual 4-column layout on Page 2
+  const { left, right } = splitContainerColumns(containers);
+  const leftCount = left.length;
+  const rowCount = Math.max(leftCount, 1);
   const containerRows: [GasClearanceContainerItem | null, GasClearanceContainerItem | null][] = [];
-  const totalContainers = Math.max(containers.length, 1);
-  for (let i = 0; i < totalContainers; i += 2) {
-    containerRows.push([containers[i] || null, containers[i + 1] || null]);
+  for (let i = 0; i < rowCount; i++) {
+    containerRows.push([left[i] || null, right[i] || null]);
   }
 
   return (
@@ -433,7 +440,7 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
             </h2>
             <p className="text-[10px] text-slate-700 mt-1">
               GC No. <span className="font-semibold">{data.certificateNumber || "-"}</span> | Ref. Notice:{" "}
-              <span className="font-semibold">{data.noticeRef || "-"}</span> | Date issued:{" "}
+              <span className="font-semibold">{resolvedNoticeRef}</span> | Date issued:{" "}
               <span className="font-semibold">{formatDate(data.certificateDate)}</span>
             </p>
           </div>
@@ -456,8 +463,8 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
               </thead>
               <tbody>
                 {containerRows.map(([left, right], idx) => {
-                  const leftIdx = idx * 2 + 1;
-                  const rightIdx = idx * 2 + 2;
+                  const leftIdx = idx + 1;
+                  const rightIdx = leftCount + idx + 1;
                   const isLast = idx === containerRows.length - 1;
 
                   return (

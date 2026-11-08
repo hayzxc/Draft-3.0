@@ -2,6 +2,13 @@ import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image, Link } from "@react-pdf/renderer";
 import { format } from "date-fns";
 import { GAS_CLEARANCE_STATIC_TEXT } from "@/lib/certificate-static-text";
+import {
+  needsAttachment,
+  getCommodityDisplay,
+  getGasSummary,
+  getContainerSummary,
+} from "@/lib/attachment/attachment";
+import { AttachmentPage } from "@/components/pdf/AttachmentPage";
 
 const PRIMARY_BLUE = "#0047AB";
 
@@ -289,103 +296,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: "right",
   },
-
-  // Page 2 Attachment Styles
-  attachmentPage: {
-    paddingTop: 36,
-    paddingBottom: 28,
-    paddingHorizontal: 40,
-    backgroundColor: "#ffffff",
-    fontSize: 8,
-    fontFamily: "Helvetica",
-    color: "#000000",
-  },
-  attachmentTitle: {
-    fontSize: 10.5,
-    fontFamily: "Helvetica-Bold",
-    color: PRIMARY_BLUE,
-    textAlign: "center",
-    letterSpacing: 0.3,
-    marginBottom: 4,
-  },
-  attachmentSubtitle: {
-    fontSize: 7.5,
-    fontFamily: "Helvetica",
-    color: "#1e293b",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  attachmentTable: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#000000",
-    marginBottom: 12,
-  },
-  attachmentTableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 0.75,
-    borderBottomColor: "#000000",
-    alignItems: "stretch",
-  },
-  attachmentTableHeader: {
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#000000",
-  },
-  attachmentCell: {
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    borderRightWidth: 0.75,
-    borderRightColor: "#000000",
-    justifyContent: "center",
-  },
-  attachmentCellLast: {
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    justifyContent: "center",
-  },
-  attachmentHeaderCellText: {
-    fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
-    color: "#000000",
-  },
-  attachmentCellText: {
-    fontSize: 7.5,
-    fontFamily: "Helvetica-Bold",
-    color: "#000000",
-  },
-  commodityBoxSection: {
-    width: "100%",
-    marginBottom: 8,
-  },
-  commodityBoxTitle: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: PRIMARY_BLUE,
-    marginBottom: 4,
-  },
-  commodityBoxContainer: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#000000",
-    padding: 6,
-    minHeight: 120,
-  },
-  commodityBoxLine: {
-    fontSize: 7.5,
-    fontFamily: "Helvetica",
-    color: "#000000",
-    lineHeight: 1.35,
-  },
-  attachmentLegalNote: {
-    fontSize: 6.8,
-    fontFamily: "Helvetica",
-    color: "#1e293b",
-    borderTopWidth: 0.75,
-    borderTopColor: "#000000",
-    paddingTop: 4,
-    marginTop: 4,
-  },
 });
 
 export interface GasClearanceContainerItem {
@@ -473,14 +383,8 @@ export const parseContainersJson = (
 };
 
 export const shouldShowGasClearanceAttachment = (data: GasClearanceCertificateData): boolean => {
+  if (needsAttachment(data.commodity)) return true;
   if (data.hasAttachment === true) return true;
-  if (data.hasAttachment === false) return false;
-
-  const rawCommodity = (data.commodity || "").trim();
-  const lines = rawCommodity.split("\n").filter((l) => l.trim().length > 0);
-  if (lines.length > 8 || rawCommodity.length > 400) {
-    return true;
-  }
 
   const containers = parseContainersJson(
     data.containersJson,
@@ -499,21 +403,8 @@ export const formatPage1CommodityLines = (
   commodity: string | null | undefined,
   isAttachmentActive: boolean
 ): string[] => {
-  if (!commodity) return ["-"];
-  const lines = commodity.split("\n");
-  if (!isAttachmentActive) return lines;
-
-  const MAX_LINES = 9;
-  if (lines.length <= MAX_LINES && commodity.length <= 400) {
-    return lines;
-  }
-
-  const truncated = lines.slice(0, MAX_LINES);
-  const lastIdx = truncated.length - 1;
-  const lastLine = truncated[lastIdx] || "";
-  const prefix = lastLine.length > 15 ? lastLine.slice(0, 15) : lastLine;
-  truncated[lastIdx] = `${prefix.trimEnd()}... (see Attachment)`;
-  return truncated;
+  if (!isAttachmentActive) return (commodity || "-").split("\n");
+  return getCommodityDisplay(commodity).displayLines;
 };
 
 const formatDate = (date: Date | string | undefined | null): string => {
@@ -560,15 +451,12 @@ export const GasClearancePdfPage: React.FC<{
       : "");
 
   if (isAttachmentActive) {
-    const count = containers.length || 1;
     const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
-    const minPpm = ppms.length > 0 ? Math.min(...ppms) : (Number(data.gasLevelPpm) || 0);
-    const maxPpm = ppms.length > 0 ? Math.max(...ppms) : (Number(data.gasLevelPpm) || 0);
-    gasReading = `${count} containers \u2014 ${minPpm}\u2013${maxPpm} ppm (see Attachment)`;
+    gasReading = getGasSummary(ppms.length > 0 ? ppms : [Number(data.gasLevelPpm) || 0]);
   }
 
   const containerDisplay = isAttachmentActive
-    ? `${containers.length || 1} containers (see Attachment)`
+    ? getContainerSummary(containers.length || 1)
     : (data.containerNumber || "-");
 
   const page1CommodityLines = formatPage1CommodityLines(data.commodity, isAttachmentActive);
@@ -838,129 +726,16 @@ export const GasClearanceAttachmentPdfPage: React.FC<{
     data.gasLevelPpm
   );
 
-  const rows: [GasClearanceContainerItem | null, GasClearanceContainerItem | null][] = [];
-  const total = Math.max(containers.length, 1);
-  for (let i = 0; i < total; i += 2) {
-    rows.push([containers[i] || null, containers[i + 1] || null]);
-  }
-
   return (
-    <Page size="A4" style={styles.attachmentPage}>
-      {/* Title */}
-      <Text style={styles.attachmentTitle}>ATTACHMENT — Consignment Details</Text>
-      <Text style={styles.attachmentSubtitle}>
-        GC No. {data.certificateNumber || "-"}  |  Ref. Notice: {data.noticeRef || "-"}  |  Date issued: {formatDate(data.certificateDate)}
-      </Text>
-
-      {/* Table: Dual 4-column */}
-      <View style={styles.attachmentTable}>
-        {/* Table Header */}
-        <View style={[styles.attachmentTableRow, styles.attachmentTableHeader]}>
-          {/* Left Set */}
-          <View style={[styles.attachmentCell, { width: "6%" }]}>
-            <Text style={[styles.attachmentHeaderCellText, { textAlign: "center" }]}>No.</Text>
-          </View>
-          <View style={[styles.attachmentCell, { width: "22%" }]}>
-            <Text style={styles.attachmentHeaderCellText}>Container No.</Text>
-          </View>
-          <View style={[styles.attachmentCell, { width: "14%" }]}>
-            <Text style={styles.attachmentHeaderCellText}>Seal No.</Text>
-          </View>
-          <View style={[styles.attachmentCell, { width: "8%" }]}>
-            <Text style={[styles.attachmentHeaderCellText, { textAlign: "center" }]}>TLV (ppm)</Text>
-          </View>
-
-          {/* Right Set */}
-          <View style={[styles.attachmentCell, { width: "6%" }]}>
-            <Text style={[styles.attachmentHeaderCellText, { textAlign: "center" }]}>No.</Text>
-          </View>
-          <View style={[styles.attachmentCell, { width: "22%" }]}>
-            <Text style={styles.attachmentHeaderCellText}>Container No.</Text>
-          </View>
-          <View style={[styles.attachmentCell, { width: "14%" }]}>
-            <Text style={styles.attachmentHeaderCellText}>Seal No.</Text>
-          </View>
-          <View style={[styles.attachmentCellLast, { width: "8%" }]}>
-            <Text style={[styles.attachmentHeaderCellText, { textAlign: "center" }]}>TLV (ppm)</Text>
-          </View>
-        </View>
-
-        {/* Table Rows */}
-        {rows.map(([left, right], idx) => {
-          const leftIndex = idx * 2 + 1;
-          const rightIndex = idx * 2 + 2;
-          const isLastRow = idx === rows.length - 1;
-
-          return (
-            <View
-              key={idx}
-              style={[
-                styles.attachmentTableRow,
-                isLastRow ? { borderBottomWidth: 0 } : {},
-              ]}
-            >
-              {/* Left Set */}
-              <View style={[styles.attachmentCell, { width: "6%" }]}>
-                <Text style={[styles.attachmentCellText, { textAlign: "center" }]}>
-                  {left ? leftIndex : ""}
-                </Text>
-              </View>
-              <View style={[styles.attachmentCell, { width: "22%" }]}>
-                <Text style={styles.attachmentCellText}>{left?.containerNumber || ""}</Text>
-              </View>
-              <View style={[styles.attachmentCell, { width: "14%" }]}>
-                <Text style={styles.attachmentCellText}>{left?.sealNumber || ""}</Text>
-              </View>
-              <View style={[styles.attachmentCell, { width: "8%" }]}>
-                <Text style={[styles.attachmentCellText, { textAlign: "center" }]}>
-                  {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
-                </Text>
-              </View>
-
-              {/* Right Set */}
-              <View style={[styles.attachmentCell, { width: "6%" }]}>
-                <Text style={[styles.attachmentCellText, { textAlign: "center" }]}>
-                  {right ? rightIndex : ""}
-                </Text>
-              </View>
-              <View style={[styles.attachmentCell, { width: "22%" }]}>
-                <Text style={styles.attachmentCellText}>{right?.containerNumber || ""}</Text>
-              </View>
-              <View style={[styles.attachmentCell, { width: "14%" }]}>
-                <Text style={styles.attachmentCellText}>{right?.sealNumber || ""}</Text>
-              </View>
-              <View style={[styles.attachmentCellLast, { width: "8%" }]}>
-                <Text style={[styles.attachmentCellText, { textAlign: "center" }]}>
-                  {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-
-      {/* Commodity / Article Box */}
-      <View style={styles.commodityBoxSection}>
-        <Text style={styles.commodityBoxTitle}>Commodity / Article</Text>
-        <View style={styles.commodityBoxContainer}>
-          {(data.commodity || "-").split("\n").map((line, idx) => (
-            <Text key={idx} style={styles.commodityBoxLine}>
-              {line || " "}
-            </Text>
-          ))}
-        </View>
-      </View>
-
-      {/* Legal Note */}
-      <Text style={styles.attachmentLegalNote}>
-        This attachment is an integral part of certificate <Text style={{ fontFamily: "Helvetica-Bold" }}>{data.certificateNumber || "-"}</Text> and is issued because the details do not fit on the main page.
-      </Text>
-
-      {/* Page Number */}
-      <View style={styles.pageNumberBox}>
-        <Text style={styles.pageNumberText}>Page 2 of 2</Text>
-      </View>
-    </Page>
+    <AttachmentPage
+      certificateNumber={data.certificateNumber}
+      noticeRef={data.noticeRef}
+      certificateDate={data.certificateDate}
+      commodity={data.commodity}
+      containers={containers}
+      pageNumber={2}
+      totalPages={2}
+    />
   );
 };
 

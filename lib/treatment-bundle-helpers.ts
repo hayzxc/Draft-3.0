@@ -20,7 +20,15 @@ export function mapTreatmentToGasClearanceData(
       ? tc.certificateNumber.replace(/TC/i, "GC")
       : "");
 
-  const autoReading = tc.gcGasLevelReading?.trim() || "";
+  const autoReading = tc.gcGasLevelReading?.trim() || tc.finalTlvReading?.trim() || "";
+
+  let gasPpm: number | null = null;
+  if (autoReading) {
+    const match = autoReading.match(/(\d+(?:\.\d+)?)/);
+    if (match) {
+      gasPpm = Number(match[1]);
+    }
+  }
 
   return {
     id: tc.id,
@@ -28,14 +36,16 @@ export function mapTreatmentToGasClearanceData(
     certificateNumber: autoGcNumber,
     registrationNumber: tc.gcRegistrationNumber?.trim() || "ID0018MB",
     certificateDate: tc.dateIssued,
+    noticeRef: tc.consignmentLinkPpk?.trim() || "",
     commodity: tc.commodityDescription || "",
     containerNumber: containersClean,
+    sealNumber: tc.sealNumbers || "",
     carrierVessel: tc.carrierVessel || "",
     fumigationArea: tc.placeOfFumigation || "",
     fumigant: tc.gcFumigant?.trim() || "Methyl Bromide (CH3Br)",
     commencingAt: tc.commencingAt,
     completedAt: tc.completedAt,
-    gasLevelPpm: null,
+    gasLevelPpm: gasPpm,
     gasLevelReading: autoReading,
     fumigatorName: tc.fumigatorName?.trim() || "",
     fumigatorSignatureUrl: tc.fumigatorSignatureUrl || null,
