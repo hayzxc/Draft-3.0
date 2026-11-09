@@ -383,20 +383,8 @@ export const parseContainersJson = (
 };
 
 export const shouldShowGasClearanceAttachment = (data: GasClearanceCertificateData): boolean => {
-  if (needsAttachment(data.commodity)) return true;
   if (data.hasAttachment === true) return true;
-
-  const containers = parseContainersJson(
-    data.containersJson,
-    data.containerNumber,
-    data.sealNumber,
-    data.gasLevelPpm
-  );
-  if (containers.length > 1) {
-    return true;
-  }
-
-  return false;
+  return needsAttachment(data.commodity);
 };
 
 export const formatPage1CommodityLines = (
