@@ -663,10 +663,10 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
         </View>
       </Page>
       {data.includeGasClearance !== false && (
-        <>
-          <GasClearancePdfPage data={gcData} isAttachmentActive={isGcAttachmentActive} />
-          {isGcAttachmentActive && <GasClearanceAttachmentPdfPage data={gcData} />}
-        </>
+        <GasClearancePdfPage data={gcData} isAttachmentActive={isGcAttachmentActive} />
+      )}
+      {data.includeGasClearance !== false && isGcAttachmentActive && (
+        <GasClearanceAttachmentPdfPage data={gcData} />
       )}
     </Document>
   );
