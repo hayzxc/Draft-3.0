@@ -13,6 +13,7 @@ import {
   getFcCommodityDisplay,
   getContainerSummary,
   splitContainerColumns,
+  needsContainerAttachment,
 } from "@/lib/attachment/attachment";
 import { parseContainersJson, GasClearanceContainerItem } from "@/components/certificate/CertificateDocument";
 
@@ -56,13 +57,15 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
 
   const includeGc = data.includeGasClearance !== false;
 
-  const isFcAttachmentActive = needsFcAttachment(data.commodityDescription);
   const fcContainers = parseContainersJson(
     undefined,
     data.containers,
     data.sealNumbers,
     data.finalTlvReading
   );
+  const isFcContainerAttachmentActive = needsContainerAttachment(fcContainers);
+  const isFcCommodityAttachmentActive = needsFcAttachment(data.commodityDescription);
+  const isFcAttachmentActive = isFcCommodityAttachmentActive || isFcContainerAttachmentActive;
 
   const resolvedNoticeRef =
     data.consignmentLinkPpk && data.consignmentLinkPpk !== "-"
@@ -79,7 +82,7 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
     containerRows.push([left[i] || null, right[i] || null]);
   }
 
-  const fcCommodityDisplayLines = isFcAttachmentActive
+  const fcCommodityDisplayLines = isFcCommodityAttachmentActive
     ? getFcCommodityDisplay(data.commodityDescription).displayLines
     : (data.commodityDescription ? data.commodityDescription.split("\n") : []);
 
@@ -169,7 +172,7 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
             ) : null}
             <div>
               Containers :{" "}
-              {isFcAttachmentActive ? (
+              {isFcContainerAttachmentActive ? (
                 <span className="font-bold text-slate-900">
                   {getContainerSummary(fcContainers.length || 1)}
                 </span>
@@ -201,7 +204,7 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
           <div className="w-[69%] min-w-0 p-1.5 space-y-0.5 break-words [overflow-wrap:anywhere] leading-snug">
             <div>
               Seal numbers :{" "}
-              {isFcAttachmentActive && fcContainers.length > 1 ? (
+              {isFcContainerAttachmentActive ? (
                 <span className="font-bold text-slate-900">(see Attachment)</span>
               ) : (
                 <TypewriterText
@@ -288,7 +291,7 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
             Commodity description and quantity
           </div>
           <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug whitespace-pre-line">
-            {isFcAttachmentActive ? (
+            {isFcCommodityAttachmentActive ? (
               fcCommodityDisplayLines.join("\n")
             ) : (
               <TypewriterText
@@ -642,54 +645,56 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
                 </p>
               </div>
 
-              {/* Table: Dual 4-Column Layout */}
-              <div className="w-full border border-black mb-4 overflow-hidden">
-                <table className="w-full border-collapse text-[10px]">
-                  <thead>
-                    <tr className="border-b border-black bg-slate-50/50 font-bold text-black">
-                      <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
-                      <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
-                      <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
-                      <th className="border-r border-black p-1.5 w-[8%] text-center">TLV (ppm)</th>
+              {/* Table: Dual 4-Column Layout (when 4+ containers) */}
+              {isFcContainerAttachmentActive && (
+                <div className="w-full border border-black mb-4 overflow-hidden">
+                  <table className="w-full border-collapse text-[10px]">
+                    <thead>
+                      <tr className="border-b border-black bg-slate-50/50 font-bold text-black">
+                        <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                        <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                        <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                        <th className="border-r border-black p-1.5 w-[8%] text-center">TLV (ppm)</th>
 
-                      <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
-                      <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
-                      <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
-                      <th className="p-1.5 w-[8%] text-center">TLV (ppm)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {containerRows.map(([left, right], idx) => {
-                      const leftIdx = idx + 1;
-                      const rightIdx = leftCount + idx + 1;
-                      const isLast = idx === containerRows.length - 1;
+                        <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                        <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                        <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                        <th className="p-1.5 w-[8%] text-center">TLV (ppm)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {containerRows.map(([left, right], idx) => {
+                        const leftIdx = idx + 1;
+                        const rightIdx = leftCount + idx + 1;
+                        const isLast = idx === containerRows.length - 1;
 
-                      return (
-                        <tr
-                          key={idx}
-                          className={`font-semibold ${!isLast ? "border-b border-black" : ""}`}
-                        >
-                          {/* Left */}
-                          <td className="border-r border-black p-1.5 text-center">{left ? leftIdx : ""}</td>
-                          <td className="border-r border-black p-1.5 uppercase">{left?.containerNumber || ""}</td>
-                          <td className="border-r border-black p-1.5 uppercase">{left?.sealNumber || ""}</td>
-                          <td className="border-r border-black p-1.5 text-center">
-                            {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
-                          </td>
+                        return (
+                          <tr
+                            key={idx}
+                            className={`font-semibold ${!isLast ? "border-b border-black" : ""}`}
+                          >
+                            {/* Left */}
+                            <td className="border-r border-black p-1.5 text-center">{left ? leftIdx : ""}</td>
+                            <td className="border-r border-black p-1.5 uppercase">{left?.containerNumber || ""}</td>
+                            <td className="border-r border-black p-1.5 uppercase">{left?.sealNumber || ""}</td>
+                            <td className="border-r border-black p-1.5 text-center">
+                              {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
+                            </td>
 
-                          {/* Right */}
-                          <td className="border-r border-black p-1.5 text-center">{right ? rightIdx : ""}</td>
-                          <td className="border-r border-black p-1.5 uppercase">{right?.containerNumber || ""}</td>
-                          <td className="border-r border-black p-1.5 uppercase">{right?.sealNumber || ""}</td>
-                          <td className="p-1.5 text-center">
-                            {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {/* Right */}
+                            <td className="border-r border-black p-1.5 text-center">{right ? rightIdx : ""}</td>
+                            <td className="border-r border-black p-1.5 uppercase">{right?.containerNumber || ""}</td>
+                            <td className="border-r border-black p-1.5 uppercase">{right?.sealNumber || ""}</td>
+                            <td className="p-1.5 text-center">
+                              {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {/* Commodity / Article Section */}
               <div className="mb-4">

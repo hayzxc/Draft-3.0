@@ -21,7 +21,7 @@ import {
   formatPage1CommodityLines,
   GasClearanceContainerItem,
 } from "@/components/certificate/CertificateDocument";
-import { splitContainerColumns } from "@/lib/attachment/attachment";
+import { splitContainerColumns, needsContainerAttachment, needsAttachment } from "@/lib/attachment/attachment";
 import { generateQrDataUrl } from "@/lib/qr";
 
 const PRIMARY_BLUE = "0047AB";
@@ -125,19 +125,21 @@ export async function createGasClearanceDocxElements(
   const letterheadBytes = await resolveImageBytes(data.logoImageUrl || "/images/letterhead.jpg");
   const signatureBytes = await resolveImageBytes(data.fumigatorSignatureUrl);
 
-  const isAttachmentActive = shouldShowGasClearanceAttachment(data);
   const containers = parseContainersJson(
     data.containersJson,
     data.containerNumber,
     data.sealNumber,
     data.gasLevelPpm
   );
+  const isAttachmentActive = shouldShowGasClearanceAttachment(data);
+  const isContainerAttachmentActive = needsContainerAttachment(containers);
+  const isCommodityAttachmentActive = needsAttachment(data.commodity);
 
-  const page1CommodityText = isAttachmentActive
+  const page1CommodityText = isCommodityAttachmentActive
     ? formatPage1CommodityLines(data.commodity, true).join("\n")
     : (data.commodity || "-");
 
-  const containerDisplay = isAttachmentActive
+  const containerDisplay = isContainerAttachmentActive
     ? `${containers.length || 1} containers (see Attachment)`
     : (data.containerNumber || "-");
 
@@ -149,7 +151,7 @@ export async function createGasClearanceDocxElements(
           : `${data.gasLevelPpm} ppm`)
       : "");
 
-  if (isAttachmentActive) {
+  if (isContainerAttachmentActive) {
     const count = containers.length || 1;
     const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
     const minPpm = ppms.length > 0 ? Math.min(...ppms) : (Number(data.gasLevelPpm) || 0);
@@ -933,7 +935,7 @@ export function createGasClearanceAttachmentDocxElements(
       ],
     }),
 
-    containerTable,
+    ...(needsContainerAttachment(containers) ? [containerTable] : []),
 
     new Paragraph({
       spacing: { before: 180, after: 60 },

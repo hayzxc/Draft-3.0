@@ -12,6 +12,8 @@ import {
   splitContainerColumns,
   getGasSummary,
   getContainerSummary,
+  getContainerCount,
+  needsContainerAttachment,
 } from "./attachment";
 import { ATTACHMENT_CONFIG } from "./config";
 
@@ -124,5 +126,24 @@ assert(fcRefDisplay.displayLines[0] === "1 X 40 CONTAINER STC:", "fc first line 
 assert(fcRefDisplay.displayLines[3] === "TOTAL NET WEIGHT: 25,000.00 KGS", "fc 4th line intact");
 assert(fcRefDisplay.displayLines[4].startsWith("TOTAL GR"), "fc 5th line truncated with prefix");
 assert(fcRefDisplay.displayLines[4] === "TOTAL GR... (see Attachment)", `fc 5th line exactly "TOTAL GR... (see Attachment)"`);
+
+// --- 7. Container Count & Attachment Threshold Tests ---
+console.log("\n--- Container Count & Attachment Threshold Tests ---");
+assert(getContainerCount(null) === 0, "null containers → 0");
+assert(getContainerCount("") === 0, "empty string → 0");
+assert(getContainerCount("CSNU2373750") === 1, "single container string → 1");
+assert(getContainerCount(["CSNU2373750"]) === 1, "single container array → 1");
+assert(getContainerCount("CSNU2373750, TEMU1234567") === 2, "2 containers comma separated → 2");
+assert(getContainerCount("CSNU1\nCSNU2\nCSNU3") === 3, "3 containers newline separated → 3");
+assert(getContainerCount("C1, C2, C3, C4") === 4, "4 containers → 4");
+assert(getContainerCount("C1, C2, C3, C4, C5") === 5, "5 containers → 5");
+
+// Attachment trigger based on container count (1, 2, 3: false; 4, 5+: true)
+assert(!needsContainerAttachment("CSNU2373750"), "1 container → needsContainerAttachment is false (directly on page 1)");
+assert(!needsContainerAttachment(["CSNU2373750"]), "1 container array → needsContainerAttachment is false");
+assert(!needsContainerAttachment("CSNU1, CSNU2"), "2 containers → needsContainerAttachment is false");
+assert(!needsContainerAttachment("CSNU1, CSNU2, CSNU3"), "3 containers → needsContainerAttachment is false");
+assert(needsContainerAttachment("CSNU1, CSNU2, CSNU3, CSNU4"), "4 containers → needsContainerAttachment is true (goes to attachment)");
+assert(needsContainerAttachment("CSNU1, CSNU2, CSNU3, CSNU4, CSNU5"), "5 containers → needsContainerAttachment is true (goes to attachment)");
 
 console.log("\n✅ ALL ATTACHMENT UNIT TESTS PASSED SUCCESSFULLY.\n");

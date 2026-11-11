@@ -129,6 +129,7 @@ export interface AttachmentPageProps {
   certificateDate?: Date | string | null;
   commodity?: string | null;
   containers?: AttachmentContainerItem[];
+  showContainersTable?: boolean;
   pageNumber?: number;
   totalPages?: number;
 }
@@ -152,9 +153,15 @@ export const AttachmentPage: React.FC<AttachmentPageProps> = ({
   certificateDate,
   commodity = "-",
   containers = [],
+  showContainersTable,
   pageNumber = 2,
   totalPages = 2,
 }) => {
+  const shouldRenderContainerTable =
+    showContainersTable !== undefined
+      ? showContainersTable
+      : containers.length >= 4;
+
   const resolvedNoticeRef =
     noticeRef && noticeRef !== "-"
       ? noticeRef
@@ -181,8 +188,9 @@ export const AttachmentPage: React.FC<AttachmentPageProps> = ({
         {certificatePrefix} {certificateNumber || "-"}  |  Ref. Notice: {resolvedNoticeRef}  |  Date issued: {formatDate(certificateDate)}
       </Text>
 
-      {/* 5.2 Container Table: Dual 4-column */}
-      <View style={styles.table}>
+      {/* 5.2 Container Table: Dual 4-column (Rendered when 4+ containers or explicit) */}
+      {shouldRenderContainerTable && (
+        <View style={styles.table}>
         <View style={[styles.tableRow, styles.tableHeader]}>
           {/* Left Column Group */}
           <View style={[styles.cell, { width: "6%" }]}>
@@ -270,6 +278,7 @@ export const AttachmentPage: React.FC<AttachmentPageProps> = ({
           );
         })}
       </View>
+      )}
 
       {/* 5.3 Commodity / Article Box */}
       <View style={styles.commodityBoxSection}>

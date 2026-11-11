@@ -81,6 +81,33 @@ export function getFcCommodityDisplay(text: string | null | undefined): {
 }
 
 /**
+ * Counts detected containers from an array of items, or a comma/newline separated string.
+ */
+export function getContainerCount(
+  containers: any[] | string | null | undefined
+): number {
+  if (!containers) return 0;
+  if (Array.isArray(containers)) return containers.length;
+  if (typeof containers === "string") {
+    return containers
+      .split(/[\r\n,;|]+/)
+      .map((s) => s.trim())
+      .filter(Boolean).length;
+  }
+  return 0;
+}
+
+/**
+ * Returns true if the number of containers meets or exceeds the attachment threshold (>= 4).
+ * If 1 container (or <= 3), returns false (appears directly on main page without going to attachment).
+ */
+export function needsContainerAttachment(
+  containers: any[] | string | null | undefined
+): boolean {
+  return getContainerCount(containers) >= ATTACHMENT_CONFIG.CONTAINER_ATTACHMENT_THRESHOLD;
+}
+
+/**
  * Splits container items into two column groups (left: 1..ceil(n/2), right: remainder).
  */
 export function splitContainerColumns<T>(items: T[] | null | undefined): { left: T[]; right: T[] } {

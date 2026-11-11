@@ -7,6 +7,7 @@ import {
   getCommodityDisplay,
   getGasSummary,
   getContainerSummary,
+  needsContainerAttachment,
 } from "@/lib/attachment/attachment";
 import { AttachmentPage } from "@/components/pdf/AttachmentPage";
 
@@ -384,7 +385,13 @@ export const parseContainersJson = (
 
 export const shouldShowGasClearanceAttachment = (data: GasClearanceCertificateData): boolean => {
   if (data.hasAttachment === true) return true;
-  return needsAttachment(data.commodity);
+  const containers = parseContainersJson(
+    data.containersJson,
+    data.containerNumber,
+    data.sealNumber,
+    data.gasLevelPpm
+  );
+  return needsAttachment(data.commodity) || needsContainerAttachment(containers);
 };
 
 export const formatPage1CommodityLines = (
@@ -430,6 +437,9 @@ export const GasClearancePdfPage: React.FC<{
     data.gasLevelPpm
   );
 
+  const isContainerAttachmentActive = needsContainerAttachment(containers);
+  const isCommodityAttachmentActive = needsAttachment(data.commodity);
+
   let gasReading =
     data.gasLevelReading?.trim() ||
     (data.gasLevelPpm !== null && data.gasLevelPpm !== undefined && data.gasLevelPpm !== ""
@@ -438,16 +448,16 @@ export const GasClearancePdfPage: React.FC<{
           : `${data.gasLevelPpm} ppm`)
       : "");
 
-  if (isAttachmentActive) {
+  if (isContainerAttachmentActive) {
     const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
     gasReading = getGasSummary(ppms.length > 0 ? ppms : [Number(data.gasLevelPpm) || 0]);
   }
 
-  const containerDisplay = isAttachmentActive
+  const containerDisplay = isContainerAttachmentActive
     ? getContainerSummary(containers.length || 1)
     : (data.containerNumber || "-");
 
-  const page1CommodityLines = formatPage1CommodityLines(data.commodity, isAttachmentActive);
+  const page1CommodityLines = formatPage1CommodityLines(data.commodity, isCommodityAttachmentActive);
 
   return (
     <Page size="A4" style={styles.page}>
@@ -721,6 +731,7 @@ export const GasClearanceAttachmentPdfPage: React.FC<{
       certificateDate={data.certificateDate}
       commodity={data.commodity}
       containers={containers}
+      showContainersTable={needsContainerAttachment(containers)}
       pageNumber={2}
       totalPages={2}
     />

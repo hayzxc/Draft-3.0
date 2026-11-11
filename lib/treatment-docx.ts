@@ -24,6 +24,7 @@ import {
   getFcCommodityDisplay,
   getContainerSummary,
   splitContainerColumns,
+  needsContainerAttachment,
 } from "@/lib/attachment/attachment";
 import { parseContainersJson } from "@/components/certificate/CertificateDocument";
 
@@ -163,13 +164,15 @@ export async function createTreatmentDocxDocument(
     resolveImageBytes(data.fumigatorSignatureUrl),
   ]);
 
-  const isFcAttachmentActive = needsFcAttachment(data.commodityDescription);
   const fcContainers = parseContainersJson(
     undefined,
     data.containers,
     data.sealNumbers,
     data.finalTlvReading
   );
+  const isFcContainerAttachmentActive = needsContainerAttachment(fcContainers);
+  const isFcCommodityAttachmentActive = needsFcAttachment(data.commodityDescription);
+  const isFcAttachmentActive = isFcCommodityAttachmentActive || isFcContainerAttachmentActive;
 
   // Section Heading helper
   const createSectionHeader = (title: string): Paragraph => {
@@ -272,7 +275,7 @@ export async function createTreatmentDocxDocument(
       children: [
         new TextRun({ text: "Containers : ", size: 14, font: FONT_FAMILY }),
         new TextRun({
-          text: isFcAttachmentActive
+          text: isFcContainerAttachmentActive
             ? getContainerSummary(fcContainers.length || 1)
             : (data.containers || "-"),
           bold: true,
@@ -443,7 +446,7 @@ export async function createTreatmentDocxDocument(
                           new TextRun({ text: "Seal numbers : ", size: 14, font: FONT_FAMILY }),
                           new TextRun({
                             text:
-                              isFcAttachmentActive && fcContainers.length > 1
+                              isFcContainerAttachmentActive
                                 ? "(see Attachment)"
                                 : (data.sealNumbers || "-"),
                             bold: true,
@@ -548,7 +551,7 @@ export async function createTreatmentDocxDocument(
                     borders: cellBorders,
                     margins: cellMargins,
                     children: createMultiLineParagraphs(
-                      isFcAttachmentActive
+                      isFcCommodityAttachmentActive
                         ? getFcCommodityDisplay(data.commodityDescription).displayLines.join("\n")
                         : data.commodityDescription,
                       true,
@@ -1267,7 +1270,7 @@ export function createTreatmentAttachmentDocxElements(
       ],
     }),
 
-    containerTable,
+    ...(needsContainerAttachment(containers) ? [containerTable] : []),
 
     new Paragraph({
       spacing: { before: 180, after: 60 },

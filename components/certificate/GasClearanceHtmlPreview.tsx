@@ -11,7 +11,7 @@ import {
   formatPage1CommodityLines,
   GasClearanceContainerItem,
 } from "./CertificateDocument";
-import { splitContainerColumns, getGasSummary, getContainerSummary } from "@/lib/attachment/attachment";
+import { splitContainerColumns, getGasSummary, getContainerSummary, needsContainerAttachment, needsAttachment } from "@/lib/attachment/attachment";
 import { TypewriterText } from "@/components/treatment/TypewriterText";
 
 interface GasClearanceHtmlPreviewProps {
@@ -48,13 +48,15 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
   const verificationLink = data.verificationUrl?.trim() || "";
   const logoUrl = data.logoImageUrl || "/images/letterhead.jpg";
 
-  const isAttachmentActive = shouldShowGasClearanceAttachment(data);
   const containers = parseContainersJson(
     data.containersJson,
     data.containerNumber,
     data.sealNumber,
     data.gasLevelPpm
   );
+  const isAttachmentActive = shouldShowGasClearanceAttachment(data);
+  const isContainerAttachmentActive = needsContainerAttachment(containers);
+  const isCommodityAttachmentActive = needsAttachment(data.commodity);
 
   // Gas level reading calculation
   let gasReading =
@@ -65,16 +67,16 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
           : `${data.gasLevelPpm} ppm`)
       : "");
 
-  if (isAttachmentActive) {
+  if (isContainerAttachmentActive) {
     const ppms = containers.map((c) => Number(c.tlvPpm ?? 0)).filter((n) => !isNaN(n));
     gasReading = getGasSummary(ppms.length > 0 ? ppms : [Number(data.gasLevelPpm) || 0]);
   }
 
-  const containerDisplay = isAttachmentActive
+  const containerDisplay = isContainerAttachmentActive
     ? getContainerSummary(containers.length || 1)
     : (data.containerNumber || "");
 
-  const page1CommodityLines = formatPage1CommodityLines(data.commodity, isAttachmentActive);
+  const page1CommodityLines = formatPage1CommodityLines(data.commodity, isCommodityAttachmentActive);
   const page1CommodityText = page1CommodityLines.join("\n");
 
   const resolvedNoticeRef =
@@ -445,54 +447,56 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
             </p>
           </div>
 
-          {/* Table: Dual 4-Column Layout */}
-          <div className="w-full border border-black mb-4 overflow-hidden">
-            <table className="w-full border-collapse text-[10px]">
-              <thead>
-                <tr className="border-b border-black bg-slate-50/50 font-bold text-black">
-                  <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
-                  <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
-                  <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
-                  <th className="border-r border-black p-1.5 w-[8%] text-center">TLV (ppm)</th>
+          {/* Table: Dual 4-Column Layout (when 4+ containers) */}
+          {isContainerAttachmentActive && (
+            <div className="w-full border border-black mb-4 overflow-hidden">
+              <table className="w-full border-collapse text-[10px]">
+                <thead>
+                  <tr className="border-b border-black bg-slate-50/50 font-bold text-black">
+                    <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                    <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                    <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                    <th className="border-r border-black p-1.5 w-[8%] text-center">TLV (ppm)</th>
 
-                  <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
-                  <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
-                  <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
-                  <th className="p-1.5 w-[8%] text-center">TLV (ppm)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {containerRows.map(([left, right], idx) => {
-                  const leftIdx = idx + 1;
-                  const rightIdx = leftCount + idx + 1;
-                  const isLast = idx === containerRows.length - 1;
+                    <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                    <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                    <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                    <th className="p-1.5 w-[8%] text-center">TLV (ppm)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {containerRows.map(([left, right], idx) => {
+                    const leftIdx = idx + 1;
+                    const rightIdx = leftCount + idx + 1;
+                    const isLast = idx === containerRows.length - 1;
 
-                  return (
-                    <tr
-                      key={idx}
-                      className={`font-semibold ${!isLast ? "border-b border-black" : ""}`}
-                    >
-                      {/* Left */}
-                      <td className="border-r border-black p-1.5 text-center">{left ? leftIdx : ""}</td>
-                      <td className="border-r border-black p-1.5 uppercase">{left?.containerNumber || ""}</td>
-                      <td className="border-r border-black p-1.5 uppercase">{left?.sealNumber || ""}</td>
-                      <td className="border-r border-black p-1.5 text-center">
-                        {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
-                      </td>
+                    return (
+                      <tr
+                        key={idx}
+                        className={`font-semibold ${!isLast ? "border-b border-black" : ""}`}
+                      >
+                        {/* Left */}
+                        <td className="border-r border-black p-1.5 text-center">{left ? leftIdx : ""}</td>
+                        <td className="border-r border-black p-1.5 uppercase">{left?.containerNumber || ""}</td>
+                        <td className="border-r border-black p-1.5 uppercase">{left?.sealNumber || ""}</td>
+                        <td className="border-r border-black p-1.5 text-center">
+                          {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
+                        </td>
 
-                      {/* Right */}
-                      <td className="border-r border-black p-1.5 text-center">{right ? rightIdx : ""}</td>
-                      <td className="border-r border-black p-1.5 uppercase">{right?.containerNumber || ""}</td>
-                      <td className="border-r border-black p-1.5 uppercase">{right?.sealNumber || ""}</td>
-                      <td className="p-1.5 text-center">
-                        {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {/* Right */}
+                        <td className="border-r border-black p-1.5 text-center">{right ? rightIdx : ""}</td>
+                        <td className="border-r border-black p-1.5 uppercase">{right?.containerNumber || ""}</td>
+                        <td className="border-r border-black p-1.5 uppercase">{right?.sealNumber || ""}</td>
+                        <td className="p-1.5 text-center">
+                          {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Commodity / Article Section */}
           <div className="mb-4">
