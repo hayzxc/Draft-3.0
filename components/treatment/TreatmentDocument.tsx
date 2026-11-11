@@ -7,8 +7,15 @@ import {
   GasClearancePdfPage,
   GasClearanceAttachmentPdfPage,
   shouldShowGasClearanceAttachment,
+  parseContainersJson,
 } from "@/components/certificate/CertificateDocument";
 import { mapTreatmentToGasClearanceData } from "@/lib/treatment-bundle-helpers";
+import {
+  needsFcAttachment,
+  getFcCommodityDisplay,
+  getContainerSummary,
+} from "@/lib/attachment/attachment";
+import { AttachmentPage } from "@/components/pdf/AttachmentPage";
 
 const PRIMARY_BLUE = "#0850A2";
 
@@ -308,6 +315,37 @@ const renderMultiLineText = (text: string | null | undefined, maxWordLen = 25) =
   ));
 };
 
+export const shouldShowTreatmentAttachment = (
+  data: TreatmentCertificateData
+): boolean => {
+  return needsFcAttachment(data.commodityDescription);
+};
+
+export const TreatmentAttachmentPdfPage: React.FC<{
+  data: TreatmentCertificateData;
+}> = ({ data }) => {
+  const containers = parseContainersJson(
+    undefined,
+    data.containers,
+    data.sealNumbers,
+    data.finalTlvReading
+  );
+
+  return (
+    <AttachmentPage
+      title="ATTACHMENT — Consignment Details"
+      certificatePrefix="TC No."
+      certificateNumber={data.certificateNumber}
+      noticeRef={data.consignmentLinkPpk}
+      certificateDate={data.dateIssued}
+      commodity={data.commodityDescription}
+      containers={containers}
+      pageNumber={2}
+      totalPages={2}
+    />
+  );
+};
+
 export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = ({
   data,
 }) => {
@@ -322,8 +360,20 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
       ? data.notifyParty
       : parsedConsignee.notifyParty;
 
+  const isFcAttachmentActive = shouldShowTreatmentAttachment(data);
+  const fcContainers = parseContainersJson(
+    undefined,
+    data.containers,
+    data.sealNumbers,
+    data.finalTlvReading
+  );
+
   const gcData = mapTreatmentToGasClearanceData(data);
   const isGcAttachmentActive = shouldShowGasClearanceAttachment(gcData);
+
+  const fcCommodityDisplayLines = isFcAttachmentActive
+    ? getFcCommodityDisplay(data.commodityDescription).displayLines
+    : (data.commodityDescription ? data.commodityDescription.split("\n") : []);
 
   return (
     <Document title={`Treatment-Cert-${data.certificateNumber || "Draft"}`}>
@@ -382,7 +432,12 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
                 </Text>
               ) : null}
               <Text style={styles.textRegular}>
-                Containers : <Text style={styles.textBold}>{wrapLongWords(data.containers || "-", 25)}</Text>
+                Containers :{" "}
+                <Text style={styles.textBold}>
+                  {isFcAttachmentActive
+                    ? getContainerSummary(fcContainers.length || 1)
+                    : wrapLongWords(data.containers || "-", 25)}
+                </Text>
               </Text>
               {data.consignmentLinkOther?.trim() ? (
                 <Text style={styles.textBold}>
@@ -399,7 +454,12 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
             </View>
             <View style={[styles.cellLast, { width: "69%", padding: 3 }]}>
               <Text style={styles.textRegular}>
-                Seal numbers : <Text style={styles.textBold}>{wrapLongWords(data.sealNumbers || "-", 25)}</Text>
+                Seal numbers :{" "}
+                <Text style={styles.textBold}>
+                  {isFcAttachmentActive && fcContainers.length > 1
+                    ? "(see Attachment)"
+                    : wrapLongWords(data.sealNumbers || "-", 25)}
+                </Text>
               </Text>
               <Text style={styles.textRegular}>
                 Carrier/vessel : <Text style={styles.textBold}>{wrapLongWords(data.carrierVessel || "-", 25)}</Text>
@@ -443,7 +503,11 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
               <Text style={styles.textRegular}>Commodity description and quantity</Text>
             </View>
             <View style={[styles.cellLast, { width: "69%" }]}>
-              {renderMultiLineText(data.commodityDescription)}
+              {renderMultiLineText(
+                isFcAttachmentActive
+                  ? fcCommodityDisplayLines.join("\n")
+                  : data.commodityDescription
+              )}
             </View>
           </View>
 
@@ -660,8 +724,16 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
           {verificationLink ? (
             <Text style={styles.footerLink}>{wrapLongWords(verificationLink, 40)}</Text>
           ) : null}
+          {isFcAttachmentActive && (
+            <Text style={{ fontSize: 6.8, fontFamily: "Helvetica", color: "#555555", marginTop: 2, textAlign: "right" }}>
+              Page 1 of 2
+            </Text>
+          )}
         </View>
       </Page>
+      {isFcAttachmentActive && (
+        <TreatmentAttachmentPdfPage data={data} />
+      )}
       {data.includeGasClearance !== false && (
         <GasClearancePdfPage data={gcData} isAttachmentActive={isGcAttachmentActive} />
       )}

@@ -122,6 +122,8 @@ export interface AttachmentContainerItem {
 }
 
 export interface AttachmentPageProps {
+  title?: string;
+  certificatePrefix?: string;
   certificateNumber?: string | null;
   noticeRef?: string | null;
   certificateDate?: Date | string | null;
@@ -143,6 +145,8 @@ const formatDate = (date: Date | string | undefined | null): string => {
 };
 
 export const AttachmentPage: React.FC<AttachmentPageProps> = ({
+  title = "ATTACHMENT — Consignment Details",
+  certificatePrefix = "GC No.",
   certificateNumber = "-",
   noticeRef = "-",
   certificateDate,
@@ -172,9 +176,9 @@ export const AttachmentPage: React.FC<AttachmentPageProps> = ({
   return (
     <Page size="A4" style={styles.page}>
       {/* 5.1 Header */}
-      <Text style={styles.title}>ATTACHMENT — Consignment Details</Text>
+      <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>
-        GC No. {certificateNumber || "-"}  |  Ref. Notice: {resolvedNoticeRef}  |  Date issued: {formatDate(certificateDate)}
+        {certificatePrefix} {certificateNumber || "-"}  |  Ref. Notice: {resolvedNoticeRef}  |  Date issued: {formatDate(certificateDate)}
       </Text>
 
       {/* 5.2 Container Table: Dual 4-column */}

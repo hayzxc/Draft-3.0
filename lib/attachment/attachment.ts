@@ -22,11 +22,21 @@ export function needsAttachment(text: string | null | undefined): boolean {
 }
 
 /**
- * Prepares the commodity text for Page 1 display.
- * If truncated, displays up to (MAX_COMMODITY_LINES - 1) visual lines,
- * followed by a truncated 9th line + "... (see Attachment)".
+ * Returns true if the commodity text exceeds the FC page 1 line budget.
  */
-export function getCommodityDisplay(text: string | null | undefined): {
+export function needsFcAttachment(text: string | null | undefined): boolean {
+  return countCommodityLines(text) > ATTACHMENT_CONFIG.MAX_FC_COMMODITY_LINES;
+}
+
+/**
+ * Prepares the commodity text for Page 1 display.
+ * If truncated, displays up to (maxLines - 1) visual lines,
+ * followed by a truncated last line + "... (see Attachment)".
+ */
+export function getCommodityDisplay(
+  text: string | null | undefined,
+  maxLines: number = ATTACHMENT_CONFIG.MAX_COMMODITY_LINES
+): {
   isTruncated: boolean;
   displayLines: string[];
 } {
@@ -35,7 +45,8 @@ export function getCommodityDisplay(text: string | null | undefined): {
   }
 
   const lines = text.split("\n");
-  if (!needsAttachment(text)) {
+  const totalLines = countCommodityLines(text);
+  if (totalLines <= maxLines) {
     return { isTruncated: false, displayLines: lines };
   }
 
@@ -43,7 +54,7 @@ export function getCommodityDisplay(text: string | null | undefined): {
   let visualCount = 0;
   for (const line of lines) {
     const lineVisual = Math.max(1, Math.ceil(line.length / ATTACHMENT_CONFIG.CHARS_PER_LINE));
-    if (visualCount + lineVisual <= ATTACHMENT_CONFIG.MAX_COMMODITY_LINES - 1) {
+    if (visualCount + lineVisual <= maxLines - 1) {
       result.push(line);
       visualCount += lineVisual;
     } else {
@@ -57,6 +68,16 @@ export function getCommodityDisplay(text: string | null | undefined): {
   }
 
   return { isTruncated: true, displayLines: result };
+}
+
+/**
+ * Prepares the commodity text for Treatment Certificate (FC) Page 1 display.
+ */
+export function getFcCommodityDisplay(text: string | null | undefined): {
+  isTruncated: boolean;
+  displayLines: string[];
+} {
+  return getCommodityDisplay(text, ATTACHMENT_CONFIG.MAX_FC_COMMODITY_LINES);
 }
 
 /**

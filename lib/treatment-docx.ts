@@ -19,6 +19,13 @@ import { TreatmentCertificateData } from "@/components/treatment/TreatmentDocume
 import { generateQrDataUrl } from "@/lib/qr";
 import { createGasClearanceDocxElements } from "@/lib/gas-clearance-docx";
 import { mapTreatmentToGasClearanceData } from "@/lib/treatment-bundle-helpers";
+import {
+  needsFcAttachment,
+  getFcCommodityDisplay,
+  getContainerSummary,
+  splitContainerColumns,
+} from "@/lib/attachment/attachment";
+import { parseContainersJson } from "@/components/certificate/CertificateDocument";
 
 const PRIMARY_BLUE = "0850A2";
 const FONT_FAMILY = "Arial";
@@ -156,6 +163,14 @@ export async function createTreatmentDocxDocument(
     resolveImageBytes(data.fumigatorSignatureUrl),
   ]);
 
+  const isFcAttachmentActive = needsFcAttachment(data.commodityDescription);
+  const fcContainers = parseContainersJson(
+    undefined,
+    data.containers,
+    data.sealNumbers,
+    data.finalTlvReading
+  );
+
   // Section Heading helper
   const createSectionHeader = (title: string): Paragraph => {
     return new Paragraph({
@@ -256,7 +271,14 @@ export async function createTreatmentDocxDocument(
       spacing: { before: 0, after: 15, line: 215 },
       children: [
         new TextRun({ text: "Containers : ", size: 14, font: FONT_FAMILY }),
-        new TextRun({ text: data.containers || "-", bold: true, size: 14, font: FONT_FAMILY }),
+        new TextRun({
+          text: isFcAttachmentActive
+            ? getContainerSummary(fcContainers.length || 1)
+            : (data.containers || "-"),
+          bold: true,
+          size: 14,
+          font: FONT_FAMILY,
+        }),
       ],
     })
   );
@@ -419,7 +441,15 @@ export async function createTreatmentDocxDocument(
                         spacing: { before: 0, after: 15, line: 215 },
                         children: [
                           new TextRun({ text: "Seal numbers : ", size: 14, font: FONT_FAMILY }),
-                          new TextRun({ text: data.sealNumbers || "-", bold: true, size: 14, font: FONT_FAMILY }),
+                          new TextRun({
+                            text:
+                              isFcAttachmentActive && fcContainers.length > 1
+                                ? "(see Attachment)"
+                                : (data.sealNumbers || "-"),
+                            bold: true,
+                            size: 14,
+                            font: FONT_FAMILY,
+                          }),
                         ],
                       }),
                       new Paragraph({
@@ -517,7 +547,13 @@ export async function createTreatmentDocxDocument(
                     width: { size: 7277, type: WidthType.DXA },
                     borders: cellBorders,
                     margins: cellMargins,
-                    children: createMultiLineParagraphs(data.commodityDescription, true, 14),
+                    children: createMultiLineParagraphs(
+                      isFcAttachmentActive
+                        ? getFcCommodityDisplay(data.commodityDescription).displayLines.join("\n")
+                        : data.commodityDescription,
+                      true,
+                      14
+                    ),
                   }),
                 ],
               }),
@@ -971,6 +1007,23 @@ export async function createTreatmentDocxDocument(
                 }),
               ]
             : []),
+          ...(isFcAttachmentActive
+            ? [
+                new Paragraph({
+                  alignment: AlignmentType.RIGHT,
+                  spacing: { before: 40, after: 0 },
+                  children: [
+                    new TextRun({
+                      text: "Page 1 of 2",
+                      font: FONT_FAMILY,
+                      size: 13,
+                      color: "555555",
+                    }),
+                  ],
+                }),
+                ...createTreatmentAttachmentDocxElements(data, fcContainers),
+              ]
+            : []),
   ];
 
   const sections: any[] = [
@@ -1016,6 +1069,262 @@ export async function createTreatmentDocxDocument(
   }
 
   return new Document({ sections });
+}
+
+export function createTreatmentAttachmentDocxElements(
+  data: TreatmentCertificateData,
+  containers: any[]
+): (Paragraph | Table)[] {
+  const blackBorder = { style: BorderStyle.SINGLE, size: 6, color: "000000" };
+  const cellBorders = {
+    top: blackBorder,
+    bottom: blackBorder,
+    left: blackBorder,
+    right: blackBorder,
+  };
+  const cellMargins = {
+    top: 50,
+    bottom: 50,
+    left: 70,
+    right: 70,
+  };
+
+  const resolvedNoticeRef =
+    data.consignmentLinkPpk && data.consignmentLinkPpk !== "-"
+      ? data.consignmentLinkPpk
+      : data.certificateNumber && data.certificateNumber.includes("/")
+      ? data.certificateNumber.split("/")[3] || "-"
+      : "-";
+
+  const { left, right } = splitContainerColumns(containers);
+  const leftCount = left.length;
+  const rowCount = Math.max(leftCount, 1);
+
+  const colWidths = [632, 2320, 1476, 845, 632, 2320, 1476, 845];
+
+  const headerCells = [
+    { text: "No.", width: 632, align: AlignmentType.CENTER },
+    { text: "Container No.", width: 2320, align: AlignmentType.LEFT },
+    { text: "Seal No.", width: 1476, align: AlignmentType.LEFT },
+    { text: "TLV (ppm)", width: 845, align: AlignmentType.CENTER },
+    { text: "No.", width: 632, align: AlignmentType.CENTER },
+    { text: "Container No.", width: 2320, align: AlignmentType.LEFT },
+    { text: "Seal No.", width: 1476, align: AlignmentType.LEFT },
+    { text: "TLV (ppm)", width: 845, align: AlignmentType.CENTER },
+  ];
+
+  const tableHeaderRow = new TableRow({
+    children: headerCells.map(
+      (h) =>
+        new TableCell({
+          width: { size: h.width, type: WidthType.DXA },
+          borders: cellBorders,
+          margins: cellMargins,
+          children: [
+            new Paragraph({
+              alignment: h.align,
+              children: [
+                new TextRun({
+                  text: h.text,
+                  font: FONT_FAMILY,
+                  bold: true,
+                  size: 14,
+                  color: "000000",
+                }),
+              ],
+            }),
+          ],
+        })
+    ),
+  });
+
+  const tableDataRows: TableRow[] = [];
+  for (let i = 0; i < rowCount; i++) {
+    const leftItem = left[i] || null;
+    const rightItem = right[i] || null;
+    const leftIdx = leftItem ? String(i + 1) : "";
+    const rightIdx = rightItem ? String(leftCount + i + 1) : "";
+
+    const rowCells = [
+      { text: leftIdx, width: 632, align: AlignmentType.CENTER },
+      { text: leftItem?.containerNumber || "", width: 2320, align: AlignmentType.LEFT },
+      { text: leftItem?.sealNumber || "", width: 1476, align: AlignmentType.LEFT },
+      {
+        text:
+          leftItem?.tlvPpm !== undefined && leftItem?.tlvPpm !== null
+            ? String(leftItem.tlvPpm)
+            : "",
+        width: 845,
+        align: AlignmentType.CENTER,
+      },
+      { text: rightIdx, width: 632, align: AlignmentType.CENTER },
+      { text: rightItem?.containerNumber || "", width: 2320, align: AlignmentType.LEFT },
+      { text: rightItem?.sealNumber || "", width: 1476, align: AlignmentType.LEFT },
+      {
+        text:
+          rightItem?.tlvPpm !== undefined && rightItem?.tlvPpm !== null
+            ? String(rightItem.tlvPpm)
+            : "",
+        width: 845,
+        align: AlignmentType.CENTER,
+      },
+    ];
+
+    tableDataRows.push(
+      new TableRow({
+        children: rowCells.map(
+          (c) =>
+            new TableCell({
+              width: { size: c.width, type: WidthType.DXA },
+              borders: cellBorders,
+              margins: cellMargins,
+              children: [
+                new Paragraph({
+                  alignment: c.align,
+                  children: [
+                    new TextRun({
+                      text: c.text,
+                      font: FONT_FAMILY,
+                      bold: true,
+                      size: 14,
+                      color: "000000",
+                    }),
+                  ],
+                }),
+              ],
+            })
+        ),
+      })
+    );
+  }
+
+  const containerTable = new Table({
+    width: { size: TOTAL_WIDTH, type: WidthType.DXA },
+    borders: cellBorders,
+    columnWidths: colWidths,
+    rows: [tableHeaderRow, ...tableDataRows],
+  });
+
+  const commodityLines = (data.commodityDescription || "-").split("\n");
+
+  const commodityBox = new Table({
+    width: { size: TOTAL_WIDTH, type: WidthType.DXA },
+    borders: cellBorders,
+    columnWidths: [TOTAL_WIDTH],
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: TOTAL_WIDTH, type: WidthType.DXA },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            children: commodityLines.map(
+              (line) =>
+                new Paragraph({
+                  spacing: { line: 260 },
+                  children: [
+                    new TextRun({
+                      text: line || " ",
+                      font: FONT_FAMILY,
+                      bold: true,
+                      size: 14,
+                      color: "000000",
+                    }),
+                  ],
+                })
+            ),
+          }),
+        ],
+      }),
+    ],
+  });
+
+  return [
+    new Paragraph({
+      pageBreakBefore: true,
+      spacing: { before: 0, after: 60 },
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "ATTACHMENT — Consignment Details",
+          font: FONT_FAMILY,
+          bold: true,
+          size: 20,
+          color: PRIMARY_BLUE,
+        }),
+      ],
+    }),
+
+    new Paragraph({
+      spacing: { after: 180 },
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: `TC No. ${data.certificateNumber || "-"}  |  Ref. Notice: ${resolvedNoticeRef}  |  Date issued: ${formatDate(data.dateIssued)}`,
+          font: FONT_FAMILY,
+          size: 14,
+          color: "1e293b",
+        }),
+      ],
+    }),
+
+    containerTable,
+
+    new Paragraph({
+      spacing: { before: 180, after: 60 },
+      children: [
+        new TextRun({
+          text: "Commodity / Article",
+          font: FONT_FAMILY,
+          bold: true,
+          size: 16,
+          color: PRIMARY_BLUE,
+        }),
+      ],
+    }),
+
+    commodityBox,
+
+    new Paragraph({
+      spacing: { before: 100, after: 40 },
+      border: {
+        top: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+      },
+      children: [
+        new TextRun({
+          text: "This attachment is an integral part of certificate ",
+          font: FONT_FAMILY,
+          size: 13,
+          color: "1e293b",
+        }),
+        new TextRun({
+          text: data.certificateNumber || "-",
+          font: FONT_FAMILY,
+          bold: true,
+          size: 13,
+          color: "000000",
+        }),
+        new TextRun({
+          text: " and is issued because the details do not fit on the main page.",
+          font: FONT_FAMILY,
+          size: 13,
+          color: "1e293b",
+        }),
+      ],
+    }),
+
+    new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { before: 60 },
+      children: [
+        new TextRun({
+          text: "Page 2 of 2",
+          font: FONT_FAMILY,
+          size: 13,
+          color: "555555",
+        }),
+      ],
+    }),
+  ];
 }
 
 /**

@@ -8,6 +8,13 @@ import { TreatmentCertificateData } from "./TreatmentDocument";
 import { TypewriterText } from "./TypewriterText";
 import { GasClearanceHtmlPreview } from "@/components/certificate/GasClearanceHtmlPreview";
 import { mapTreatmentToGasClearanceData } from "@/lib/treatment-bundle-helpers";
+import {
+  needsFcAttachment,
+  getFcCommodityDisplay,
+  getContainerSummary,
+  splitContainerColumns,
+} from "@/lib/attachment/attachment";
+import { parseContainersJson, GasClearanceContainerItem } from "@/components/certificate/CertificateDocument";
 
 interface TreatmentHtmlPreviewProps {
   data: TreatmentCertificateData;
@@ -48,6 +55,33 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
   const verificationLink = data.verificationUrl?.trim() || "";
 
   const includeGc = data.includeGasClearance !== false;
+
+  const isFcAttachmentActive = needsFcAttachment(data.commodityDescription);
+  const fcContainers = parseContainersJson(
+    undefined,
+    data.containers,
+    data.sealNumbers,
+    data.finalTlvReading
+  );
+
+  const resolvedNoticeRef =
+    data.consignmentLinkPpk && data.consignmentLinkPpk !== "-"
+      ? data.consignmentLinkPpk
+      : data.certificateNumber && data.certificateNumber.includes("/")
+      ? data.certificateNumber.split("/")[3] || "-"
+      : "-";
+
+  const { left, right } = splitContainerColumns(fcContainers);
+  const leftCount = left.length;
+  const rowCount = Math.max(leftCount, 1);
+  const containerRows: [GasClearanceContainerItem | null, GasClearanceContainerItem | null][] = [];
+  for (let i = 0; i < rowCount; i++) {
+    containerRows.push([left[i] || null, right[i] || null]);
+  }
+
+  const fcCommodityDisplayLines = isFcAttachmentActive
+    ? getFcCommodityDisplay(data.commodityDescription).displayLines
+    : (data.commodityDescription ? data.commodityDescription.split("\n") : []);
 
   return (
     <div className="w-full space-y-4">
@@ -135,11 +169,17 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
             ) : null}
             <div>
               Containers :{" "}
-              <TypewriterText
-                text={data.containers}
-                active={activeField === "containers"}
-                placeholder="-"
-              />
+              {isFcAttachmentActive ? (
+                <span className="font-bold text-slate-900">
+                  {getContainerSummary(fcContainers.length || 1)}
+                </span>
+              ) : (
+                <TypewriterText
+                  text={data.containers}
+                  active={activeField === "containers"}
+                  placeholder="-"
+                />
+              )}
             </div>
             {(data.consignmentLinkOther?.trim() || activeField === "consignmentLinkOther") ? (
               <div className="font-bold text-slate-900 whitespace-pre-line break-words leading-snug">
@@ -161,11 +201,15 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
           <div className="w-[69%] min-w-0 p-1.5 space-y-0.5 break-words [overflow-wrap:anywhere] leading-snug">
             <div>
               Seal numbers :{" "}
-              <TypewriterText
-                text={data.sealNumbers}
-                active={activeField === "sealNumbers"}
-                placeholder="-"
-              />
+              {isFcAttachmentActive && fcContainers.length > 1 ? (
+                <span className="font-bold text-slate-900">(see Attachment)</span>
+              ) : (
+                <TypewriterText
+                  text={data.sealNumbers}
+                  active={activeField === "sealNumbers"}
+                  placeholder="-"
+                />
+              )}
             </div>
             <div>
               Carrier/vessel :{" "}
@@ -244,11 +288,15 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
             Commodity description and quantity
           </div>
           <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug whitespace-pre-line">
-            <TypewriterText
-              text={formatContinuousDisplay(data.commodityDescription)}
-              active={activeField === "commodityDescription"}
-              placeholder="-"
-            />
+            {isFcAttachmentActive ? (
+              fcCommodityDisplayLines.join("\n")
+            ) : (
+              <TypewriterText
+                text={formatContinuousDisplay(data.commodityDescription)}
+                active={activeField === "commodityDescription"}
+                placeholder="-"
+              />
+            )}
           </div>
         </div>
 
@@ -560,8 +608,113 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
             {verificationLink}
           </a>
         )}
+        {isFcAttachmentActive && (
+          <div className="flex justify-end pt-1 text-[10px] text-slate-500 font-sans">
+            Page 1 of 2
+          </div>
+        )}
       </div>
       </div>
+
+      {/* FC Attachment Page (when commodity exceeds limit) */}
+      {isFcAttachmentActive && (
+        <div className="w-full animate-in fade-in-50 duration-200">
+          <div className="flex items-center gap-3 my-4 max-w-[820px] mx-auto select-none">
+            <div className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
+            <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 rounded-full border border-slate-300 dark:border-slate-700 flex items-center gap-2 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              Lampiran: Detail Konsinyasi (Treatment Certificate Attachment)
+            </span>
+            <div className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
+          </div>
+
+          <div className="mx-auto w-full max-w-[794px] min-h-[1123px] bg-white text-black shadow-[0_15px_50px_rgba(0,0,0,0.18)] border border-slate-300 p-8 md:p-12 font-sans text-[11px] leading-tight select-none rounded-sm transition-all duration-150 flex flex-col justify-between">
+            <div className="flex-1">
+              {/* Header */}
+              <div className="text-center mb-4">
+                <h2 className="text-base font-bold text-[#0850A2] tracking-wide">
+                  ATTACHMENT — Consignment Details
+                </h2>
+                <p className="text-[10px] text-slate-700 mt-1">
+                  TC No. <span className="font-semibold">{data.certificateNumber || "-"}</span> | Ref. Notice:{" "}
+                  <span className="font-semibold">{resolvedNoticeRef}</span> | Date issued:{" "}
+                  <span className="font-semibold">{formatDate(data.dateIssued)}</span>
+                </p>
+              </div>
+
+              {/* Table: Dual 4-Column Layout */}
+              <div className="w-full border border-black mb-4 overflow-hidden">
+                <table className="w-full border-collapse text-[10px]">
+                  <thead>
+                    <tr className="border-b border-black bg-slate-50/50 font-bold text-black">
+                      <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                      <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                      <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                      <th className="border-r border-black p-1.5 w-[8%] text-center">TLV (ppm)</th>
+
+                      <th className="border-r border-black p-1.5 w-[6%] text-center">No.</th>
+                      <th className="border-r border-black p-1.5 w-[22%] text-left">Container No.</th>
+                      <th className="border-r border-black p-1.5 w-[14%] text-left">Seal No.</th>
+                      <th className="p-1.5 w-[8%] text-center">TLV (ppm)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {containerRows.map(([left, right], idx) => {
+                      const leftIdx = idx + 1;
+                      const rightIdx = leftCount + idx + 1;
+                      const isLast = idx === containerRows.length - 1;
+
+                      return (
+                        <tr
+                          key={idx}
+                          className={`font-semibold ${!isLast ? "border-b border-black" : ""}`}
+                        >
+                          {/* Left */}
+                          <td className="border-r border-black p-1.5 text-center">{left ? leftIdx : ""}</td>
+                          <td className="border-r border-black p-1.5 uppercase">{left?.containerNumber || ""}</td>
+                          <td className="border-r border-black p-1.5 uppercase">{left?.sealNumber || ""}</td>
+                          <td className="border-r border-black p-1.5 text-center">
+                            {left?.tlvPpm !== undefined && left?.tlvPpm !== null ? String(left.tlvPpm) : ""}
+                          </td>
+
+                          {/* Right */}
+                          <td className="border-r border-black p-1.5 text-center">{right ? rightIdx : ""}</td>
+                          <td className="border-r border-black p-1.5 uppercase">{right?.containerNumber || ""}</td>
+                          <td className="border-r border-black p-1.5 uppercase">{right?.sealNumber || ""}</td>
+                          <td className="p-1.5 text-center">
+                            {right?.tlvPpm !== undefined && right?.tlvPpm !== null ? String(right.tlvPpm) : ""}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Commodity / Article Section */}
+              <div className="mb-4">
+                <h3 className="text-[11px] font-bold text-[#0850A2] mb-1">
+                  Commodity / Article
+                </h3>
+                <div className="border border-black p-2.5 min-h-[140px] font-mono text-[9.5px] uppercase whitespace-pre-line leading-relaxed text-black">
+                  {data.commodityDescription || "-"}
+                </div>
+              </div>
+
+              {/* Legal Note */}
+              <div className="border-t border-black pt-2 text-[9.5px] text-slate-800 leading-normal">
+                This attachment is an integral part of certificate{" "}
+                <span className="font-bold">{data.certificateNumber || "-"}</span> and is issued because the details do not fit on the main page.
+              </div>
+            </div>
+
+            {/* Page 2 Footer */}
+            <div className="flex justify-end pt-3 text-[10px] text-slate-500 font-sans">
+              Page 2 of 2
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Page 2: Gas Clearance (when enabled) */}
       {includeGc && (

@@ -6,7 +6,9 @@
 import {
   countCommodityLines,
   needsAttachment,
+  needsFcAttachment,
   getCommodityDisplay,
+  getFcCommodityDisplay,
   splitContainerColumns,
   getGasSummary,
   getContainerSummary,
@@ -97,5 +99,30 @@ assert(getGasSummary([0]) === "1 containers \u2014 0\u20130 ppm (see Attachment)
 assert(getGasSummary([5, 10, 3]) === "3 containers \u2014 3\u201310 ppm (see Attachment)", "min 3, max 10");
 assert(getContainerSummary(1) === "1 containers (see Attachment)", "1 container summary");
 assert(getContainerSummary(4) === "4 containers (see Attachment)", "4 container summary");
+
+// --- 6. Treatment Certificate (FC) Attachment Tests ---
+console.log("\n--- FC Attachment Tests ---");
+const userShortCommodity = `3X40'HC SAID TO CONTAIN :
+63 PALLETS = 102000 PCS = 140.94 M3
+OF MAHONI FACE VENEER
+NW : 76,436.00 KGS GW : 76,639.00 KGS MEAS : 140.940 CBM`;
+
+assert(countCommodityLines(userShortCommodity) === 4, "user short commodity → 4 lines");
+assert(!needsFcAttachment(userShortCommodity), "user short commodity (4 lines) → needsFcAttachment is false");
+assert(!needsFcAttachment("Line 1\nLine 2\nLine 3\nLine 4\nLine 5"), "5 lines → needsFcAttachment is false");
+assert(needsFcAttachment("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6"), "6 lines → needsFcAttachment is true");
+assert(needsFcAttachment(referenceCommodity), "reference commodity (11 lines) → needsFcAttachment is true");
+
+const fcShortDisplay = getFcCommodityDisplay(userShortCommodity);
+assert(!fcShortDisplay.isTruncated, "fc short commodity → not truncated");
+assert(fcShortDisplay.displayLines.length === 4, "fc short commodity → 4 lines returned intact");
+
+const fcRefDisplay = getFcCommodityDisplay(referenceCommodity);
+assert(fcRefDisplay.isTruncated, "fc reference commodity → isTruncated true");
+assert(fcRefDisplay.displayLines.length === 5, `fc displayLines length = 5 (got ${fcRefDisplay.displayLines.length})`);
+assert(fcRefDisplay.displayLines[0] === "1 X 40 CONTAINER STC:", "fc first line intact");
+assert(fcRefDisplay.displayLines[3] === "TOTAL NET WEIGHT: 25,000.00 KGS", "fc 4th line intact");
+assert(fcRefDisplay.displayLines[4].startsWith("TOTAL GR"), "fc 5th line truncated with prefix");
+assert(fcRefDisplay.displayLines[4] === "TOTAL GR... (see Attachment)", `fc 5th line exactly "TOTAL GR... (see Attachment)"`);
 
 console.log("\n✅ ALL ATTACHMENT UNIT TESTS PASSED SUCCESSFULLY.\n");
