@@ -6,7 +6,7 @@ import { ATTACHMENT_CONFIG } from "./config";
  */
 export function countCommodityLines(text: string | null | undefined): number {
   if (!text || !text.trim()) return 0;
-  const rawLines = text.split("\n");
+  const rawLines = text.split(/\r?\n/);
   let totalLines = 0;
   for (const line of rawLines) {
     totalLines += Math.max(1, Math.ceil(line.length / ATTACHMENT_CONFIG.CHARS_PER_LINE));
@@ -44,7 +44,7 @@ export function getCommodityDisplay(
     return { isTruncated: false, displayLines: ["-"] };
   }
 
-  const lines = text.split("\n");
+  const lines = text.split(/\r?\n/);
   const totalLines = countCommodityLines(text);
   if (totalLines <= maxLines) {
     return { isTruncated: false, displayLines: lines };

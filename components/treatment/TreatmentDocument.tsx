@@ -346,6 +346,7 @@ export const TreatmentAttachmentPdfPage: React.FC<{
       noticeRef={data.consignmentLinkPpk}
       certificateDate={data.dateIssued}
       commodity={data.commodityDescription}
+      commodityTitle="Commodity Description and Quantity"
       containers={containers}
       showContainersTable={needsContainerAttachment(containers)}
       pageNumber={2}

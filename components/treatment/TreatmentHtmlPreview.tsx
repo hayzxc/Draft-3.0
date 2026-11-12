@@ -696,10 +696,10 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
                 </div>
               )}
 
-              {/* Commodity / Article Section */}
+              {/* Commodity Description and Quantity Section */}
               <div className="mb-4">
                 <h3 className="text-[11px] font-bold text-[#0850A2] mb-1">
-                  Commodity / Article
+                  Commodity Description and Quantity
                 </h3>
                 <div className="border border-black p-2.5 min-h-[140px] font-mono text-[9.5px] uppercase whitespace-pre-line leading-relaxed text-black">
                   {data.commodityDescription || "-"}

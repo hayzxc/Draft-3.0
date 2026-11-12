@@ -39,9 +39,10 @@ assert(countCommodityLines("Line 1\nLine 2\nLine 3") === 3, "3 newline-separated
 console.log("\n--- needsAttachment ---");
 assert(!needsAttachment("SHORT TEXT"), "short text → false");
 assert(!needsAttachment(Array.from({ length: 9 }, (_, i) => `Line ${i + 1}`).join("\n")), "exactly 9 lines → false");
-assert(needsAttachment(Array.from({ length: 10 }, (_, i) => `Line ${i + 1}`).join("\n")), "10 lines → true");
-assert(!needsAttachment("A".repeat(ATTACHMENT_CONFIG.CHARS_PER_LINE * 9)), "540 chars (9 visual) → false");
-assert(needsAttachment("A".repeat(ATTACHMENT_CONFIG.CHARS_PER_LINE * 9 + 1)), "541 chars (10 visual) → true");
+assert(!needsAttachment(Array.from({ length: 10 }, (_, i) => `Line ${i + 1}`).join("\n")), "10 lines → false (threshold is >= 11)");
+assert(needsAttachment(Array.from({ length: 11 }, (_, i) => `Line ${i + 1}`).join("\n")), "11 lines → true (triggers attachment)");
+assert(!needsAttachment("A".repeat(ATTACHMENT_CONFIG.CHARS_PER_LINE * 10)), "800 chars (10 visual) → false");
+assert(needsAttachment("A".repeat(ATTACHMENT_CONFIG.CHARS_PER_LINE * 10 + 1)), "801 chars (11 visual) → true");
 
 // Test with reference PDF commodity (11 lines)
 const referenceCommodity = `1 X 40 CONTAINER STC:
@@ -58,6 +59,28 @@ GW / NW / MEAS : 25,500.00 KGS / 25,000.00 KGS / 66.00 CBM`;
 
 assert(needsAttachment(referenceCommodity), "reference PDF commodity (11 lines) → true");
 
+// Test with exact 11 lines from user screenshot (Gum Copal)
+const userImageCommodity = `1 X 20'
+600 PACKAGES X 25 KGS (15,000 KGS) GUM COPAL
+QUANTITY: 15.00 MT (TOLERANCE +/- 10 PCT)
+H.S. CODE NO.: 1301.90.00(BANGLADESH)/1301.90.90(INDONESIA).
+DETAIL DESCRIPTION OF GOODS SPECIFICATIONS, QUALITY,
+QUANTITY, UNIT PRICE, TOTAL PRICE AND ALL OTHER DETAILS ARE AS PER PROFORMA
+INVOICE NO. PI/014-01/FARIHA/GUC/2026 DATED 09/09/2026
+DESCRIPTION OF GOODS
+PL NO. : PL/014-01-A/FARIHA/GUC/2026 DATE (P/L) : 05/10/2026
+LC NUMBER : 012726010096 DATE (L/C) : 08/09/2026
+H.S. CODE : 1301.90.00 (BD), 1301.90.90 (ID)`;
+
+assert(countCommodityLines(userImageCommodity) === 11, "user image commodity is exactly 11 lines");
+assert(needsAttachment(userImageCommodity), "user image commodity (11 lines) → needsAttachment is true");
+assert(needsFcAttachment(userImageCommodity), "user image commodity (11 lines) → needsFcAttachment is true");
+
+const userImage10Lines = userImageCommodity.split("\n").slice(0, 10).join("\n");
+assert(countCommodityLines(userImage10Lines) === 10, "first 10 lines of image commodity is 10 lines");
+assert(!needsAttachment(userImage10Lines), "10 lines → needsAttachment is false");
+assert(!needsFcAttachment(userImage10Lines), "10 lines → needsFcAttachment is false");
+
 // --- 3. getCommodityDisplay ---
 console.log("\n--- getCommodityDisplay ---");
 const emptyDisplay = getCommodityDisplay(null);
@@ -66,21 +89,25 @@ assert(!emptyDisplay.isTruncated && emptyDisplay.displayLines[0] === "-", "null 
 const shortDisplay = getCommodityDisplay("Short Line 1\nShort Line 2");
 assert(!shortDisplay.isTruncated && shortDisplay.displayLines.length === 2, "short commodity → not truncated");
 
+const display10 = getCommodityDisplay(userImage10Lines);
+assert(!display10.isTruncated, "10 lines → not truncated");
+assert(display10.displayLines.length === 10, "10 lines → 10 lines returned intact on page 1");
+
 const refDisplay = getCommodityDisplay(referenceCommodity);
-assert(refDisplay.isTruncated, "reference commodity → isTruncated true");
-assert(refDisplay.displayLines.length === 9, `displayLines length = 9 (got ${refDisplay.displayLines.length})`);
+assert(refDisplay.isTruncated, "reference commodity (11 lines) → isTruncated true");
+assert(refDisplay.displayLines.length === 10, `displayLines length = 10 (got ${refDisplay.displayLines.length})`);
 assert(refDisplay.displayLines[0] === "1 X 40 CONTAINER STC:", "first line intact");
-assert(refDisplay.displayLines[7] === "IRC NO : 260381120000319 H.S. CODE : 0907.10.90", "8th line intact");
+assert(refDisplay.displayLines[8] === "APPLICANT TIN NO. : 260381120000319", "9th line intact");
 
-const ninthLine = refDisplay.displayLines[8];
-assert(ninthLine.startsWith("APPLICAN"), `9th line starts with APPLICAN (got: "${ninthLine}")`);
-assert(ninthLine.includes("... (see Attachment)"), `9th line includes marker (got: "${ninthLine}")`);
-assert(ninthLine === "APPLICAN... (see Attachment)", `9th line exactly "APPLICAN... (see Attachment)"`);
+const tenthLine = refDisplay.displayLines[9];
+assert(tenthLine.startsWith("APPLICAN"), `10th line starts with APPLICAN (got: "${tenthLine}")`);
+assert(tenthLine.includes("... (see Attachment)"), `10th line includes marker (got: "${tenthLine}")`);
+assert(tenthLine === "APPLICAN... (see Attachment)", `10th line exactly "APPLICAN... (see Attachment)"`);
 
-// Edge case: line 9 with < 8 chars
-const short9thLineCommodity = Array.from({ length: 8 }, (_, i) => `Line ${i + 1}`).join("\n") + "\nABC\nLine 10";
-const short9thDisplay = getCommodityDisplay(short9thLineCommodity);
-assert(short9thDisplay.displayLines[8] === "ABC... (see Attachment)", `short line 9 preserved ("ABC... (see Attachment)")`);
+// Edge case: line 10 with < 8 chars
+const short10thLineCommodity = Array.from({ length: 9 }, (_, i) => `Line ${i + 1}`).join("\n") + "\nABC\nLine 11";
+const short10thDisplay = getCommodityDisplay(short10thLineCommodity);
+assert(short10thDisplay.displayLines[9] === "ABC... (see Attachment)", `short line 10 preserved ("ABC... (see Attachment)")`);
 
 // --- 4. splitContainerColumns ---
 console.log("\n--- splitContainerColumns ---");
@@ -112,20 +139,26 @@ NW : 76,436.00 KGS GW : 76,639.00 KGS MEAS : 140.940 CBM`;
 assert(countCommodityLines(userShortCommodity) === 4, "user short commodity → 4 lines");
 assert(!needsFcAttachment(userShortCommodity), "user short commodity (4 lines) → needsFcAttachment is false");
 assert(!needsFcAttachment("Line 1\nLine 2\nLine 3\nLine 4\nLine 5"), "5 lines → needsFcAttachment is false");
-assert(needsFcAttachment("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6"), "6 lines → needsFcAttachment is true");
+assert(!needsFcAttachment(Array.from({ length: 10 }, (_, i) => `Line ${i + 1}`).join("\n")), "10 lines → needsFcAttachment is false");
+assert(needsFcAttachment(Array.from({ length: 11 }, (_, i) => `Line ${i + 1}`).join("\n")), "11 lines → needsFcAttachment is true");
 assert(needsFcAttachment(referenceCommodity), "reference commodity (11 lines) → needsFcAttachment is true");
+assert(needsFcAttachment(userImageCommodity), "user image commodity (11 lines) → needsFcAttachment is true");
 
 const fcShortDisplay = getFcCommodityDisplay(userShortCommodity);
 assert(!fcShortDisplay.isTruncated, "fc short commodity → not truncated");
 assert(fcShortDisplay.displayLines.length === 4, "fc short commodity → 4 lines returned intact");
 
+const fc10Display = getFcCommodityDisplay(userImage10Lines);
+assert(!fc10Display.isTruncated, "fc 10 lines → not truncated");
+assert(fc10Display.displayLines.length === 10, "fc 10 lines → 10 lines returned intact on page 1");
+
 const fcRefDisplay = getFcCommodityDisplay(referenceCommodity);
-assert(fcRefDisplay.isTruncated, "fc reference commodity → isTruncated true");
-assert(fcRefDisplay.displayLines.length === 5, `fc displayLines length = 5 (got ${fcRefDisplay.displayLines.length})`);
+assert(fcRefDisplay.isTruncated, "fc reference commodity (11 lines) → isTruncated true");
+assert(fcRefDisplay.displayLines.length === 10, `fc displayLines length = 10 (got ${fcRefDisplay.displayLines.length})`);
 assert(fcRefDisplay.displayLines[0] === "1 X 40 CONTAINER STC:", "fc first line intact");
-assert(fcRefDisplay.displayLines[3] === "TOTAL NET WEIGHT: 25,000.00 KGS", "fc 4th line intact");
-assert(fcRefDisplay.displayLines[4].startsWith("TOTAL GR"), "fc 5th line truncated with prefix");
-assert(fcRefDisplay.displayLines[4] === "TOTAL GR... (see Attachment)", `fc 5th line exactly "TOTAL GR... (see Attachment)"`);
+assert(fcRefDisplay.displayLines[8] === "APPLICANT TIN NO. : 260381120000319", "fc 9th line intact");
+assert(fcRefDisplay.displayLines[9].startsWith("APPLICAN"), "fc 10th line truncated with prefix");
+assert(fcRefDisplay.displayLines[9] === "APPLICAN... (see Attachment)", `fc 10th line exactly "APPLICAN... (see Attachment)"`);
 
 // --- 7. Container Count & Attachment Threshold Tests ---
 console.log("\n--- Container Count & Attachment Threshold Tests ---");

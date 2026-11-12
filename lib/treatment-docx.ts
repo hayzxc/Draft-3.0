@@ -1276,7 +1276,7 @@ export function createTreatmentAttachmentDocxElements(
       spacing: { before: 180, after: 60 },
       children: [
         new TextRun({
-          text: "Commodity / Article",
+          text: "Commodity Description and Quantity",
           font: FONT_FAMILY,
           bold: true,
           size: 16,

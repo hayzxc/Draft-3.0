@@ -128,6 +128,7 @@ export interface AttachmentPageProps {
   noticeRef?: string | null;
   certificateDate?: Date | string | null;
   commodity?: string | null;
+  commodityTitle?: string;
   containers?: AttachmentContainerItem[];
   showContainersTable?: boolean;
   pageNumber?: number;
@@ -152,6 +153,7 @@ export const AttachmentPage: React.FC<AttachmentPageProps> = ({
   noticeRef = "-",
   certificateDate,
   commodity = "-",
+  commodityTitle = "Commodity / Article",
   containers = [],
   showContainersTable,
   pageNumber = 2,
@@ -282,7 +284,7 @@ export const AttachmentPage: React.FC<AttachmentPageProps> = ({
 
       {/* 5.3 Commodity / Article Box */}
       <View style={styles.commodityBoxSection}>
-        <Text style={styles.commodityBoxTitle}>Commodity / Article</Text>
+        <Text style={styles.commodityBoxTitle}>{commodityTitle || "Commodity / Article"}</Text>
         <View style={styles.commodityBoxContainer}>
           {commodityLines.map((line, idx) => (
             <Text key={idx} style={styles.commodityBoxLine}>
