@@ -1,15 +1,73 @@
 import { ATTACHMENT_CONFIG } from "./config";
 
 /**
- * Counts visual lines rendered for a commodity text block,
- * taking into account newlines and wrapping based on CHARS_PER_LINE.
+ * Wraps a line of text based on word boundaries up to maxChars per line.
+ * If an individual word exceeds maxChars, it is split across chunks.
  */
-export function countCommodityLines(text: string | null | undefined): number {
+export function wrapTextToLines(
+  text: string,
+  maxChars: number = ATTACHMENT_CONFIG.CHARS_PER_LINE
+): string[] {
+  if (!text) return [];
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    if (!word) {
+      if (currentLine) currentLine += " ";
+      continue;
+    }
+
+    if (!currentLine) {
+      if (word.length <= maxChars) {
+        currentLine = word;
+      } else {
+        let remaining = word;
+        while (remaining.length > maxChars) {
+          lines.push(remaining.slice(0, maxChars));
+          remaining = remaining.slice(maxChars);
+        }
+        currentLine = remaining;
+      }
+    } else if (currentLine.length + 1 + word.length <= maxChars) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      if (word.length <= maxChars) {
+        currentLine = word;
+      } else {
+        let remaining = word;
+        while (remaining.length > maxChars) {
+          lines.push(remaining.slice(0, maxChars));
+          remaining = remaining.slice(maxChars);
+        }
+        currentLine = remaining;
+      }
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.length > 0 ? lines : [""];
+}
+
+/**
+ * Counts visual lines rendered for a commodity text block,
+ * taking into account newlines and dynamic word wrapping based on CHARS_PER_LINE.
+ */
+export function countCommodityLines(
+  text: string | null | undefined,
+  charsPerLine: number = ATTACHMENT_CONFIG.CHARS_PER_LINE
+): number {
   if (!text || !text.trim()) return 0;
   const rawLines = text.split(/\r?\n/);
   let totalLines = 0;
   for (const line of rawLines) {
-    totalLines += Math.max(1, Math.ceil(line.length / ATTACHMENT_CONFIG.CHARS_PER_LINE));
+    const wrapped = wrapTextToLines(line, charsPerLine);
+    totalLines += Math.max(1, wrapped.length);
   }
   return totalLines;
 }
@@ -35,7 +93,8 @@ export function needsFcAttachment(text: string | null | undefined): boolean {
  */
 export function getCommodityDisplay(
   text: string | null | undefined,
-  maxLines: number = ATTACHMENT_CONFIG.MAX_COMMODITY_LINES
+  maxLines: number = ATTACHMENT_CONFIG.MAX_COMMODITY_LINES,
+  charsPerLine: number = ATTACHMENT_CONFIG.CHARS_PER_LINE
 ): {
   isTruncated: boolean;
   displayLines: string[];
@@ -45,7 +104,7 @@ export function getCommodityDisplay(
   }
 
   const lines = text.split(/\r?\n/);
-  const totalLines = countCommodityLines(text);
+  const totalLines = countCommodityLines(text, charsPerLine);
   if (totalLines <= maxLines) {
     return { isTruncated: false, displayLines: lines };
   }
@@ -53,7 +112,8 @@ export function getCommodityDisplay(
   const result: string[] = [];
   let visualCount = 0;
   for (const line of lines) {
-    const lineVisual = Math.max(1, Math.ceil(line.length / ATTACHMENT_CONFIG.CHARS_PER_LINE));
+    const wrapped = wrapTextToLines(line, charsPerLine);
+    const lineVisual = Math.max(1, wrapped.length);
     if (visualCount + lineVisual <= maxLines - 1) {
       result.push(line);
       visualCount += lineVisual;
