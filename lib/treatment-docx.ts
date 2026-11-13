@@ -511,36 +511,30 @@ export async function createTreatmentDocxDocument(
                 ],
               }),
 
-              // Row 5: Notify party (Opsional — tidak dicetak jika kosong)
-              ...((data.notifyParty !== undefined && data.notifyParty !== null
-                ? data.notifyParty
-                : parseConsigneeAndNotifyParty(data.consignee).notifyParty)?.trim()
-                ? [
-                    new TableRow({
-                      children: [
-                        new TableCell({
-                          width: { size: 3269, type: WidthType.DXA },
-                          borders: cellBorders,
-                          margins: cellMargins,
-                          children: [createP("Notify party", false, "000000", 14)],
-                        }),
-                        new TableCell({
-                          columnSpan: 3,
-                          width: { size: 7277, type: WidthType.DXA },
-                          borders: cellBorders,
-                          margins: cellMargins,
-                          children: createMultiLineParagraphs(
-                            data.notifyParty !== undefined && data.notifyParty !== null
-                              ? data.notifyParty
-                              : parseConsigneeAndNotifyParty(data.consignee).notifyParty,
-                            true,
-                            14
-                          ),
-                        }),
-                      ],
-                    }),
-                  ]
-                : []),
+              // Row 5: Notify party
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 3269, type: WidthType.DXA },
+                    borders: cellBorders,
+                    margins: cellMargins,
+                    children: [createP("Notify party", false, "000000", 14)],
+                  }),
+                  new TableCell({
+                    columnSpan: 3,
+                    width: { size: 7277, type: WidthType.DXA },
+                    borders: cellBorders,
+                    margins: cellMargins,
+                    children: createMultiLineParagraphs(
+                      data.notifyParty !== undefined && data.notifyParty !== null
+                        ? data.notifyParty
+                        : parseConsigneeAndNotifyParty(data.consignee).notifyParty,
+                      true,
+                      14
+                    ),
+                  }),
+                ],
+              }),
 
               // Row 5: Commodity description and quantity
               new TableRow({

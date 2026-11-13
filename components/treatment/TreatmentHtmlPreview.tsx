@@ -267,22 +267,20 @@ export const TreatmentHtmlPreview: React.FC<TreatmentHtmlPreviewProps> = ({
                 </div>
               </div>
 
-              {/* Row 5: Notify party (Opsional — baris tidak dicetak di PDF bila kosong) */}
-              {displayNotifyParty?.trim() && displayNotifyParty.trim() !== "-" ? (
-                <div className="flex border-b border-black items-stretch w-full">
-                  <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
-                    Notify party
-                  </div>
-                  <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug whitespace-pre-line">
-                    <TypewriterText
-                      text={formatContinuousDisplay(displayNotifyParty)}
-                      active={activeField === "notifyParty"}
-                      bold={true}
-                      placeholder="-"
-                    />
-                  </div>
+              {/* Row 5: Notify party */}
+              <div className="flex border-b border-black items-stretch w-full">
+                <div className="w-[31%] shrink-0 border-r border-black p-1.5 text-slate-800">
+                  Notify party
                 </div>
-              ) : null}
+                <div className="w-[69%] min-w-0 p-1.5 font-bold text-slate-900 break-words [overflow-wrap:anywhere] leading-snug whitespace-pre-line">
+                  <TypewriterText
+                    text={formatContinuousDisplay(displayNotifyParty)}
+                    active={activeField === "notifyParty"}
+                    bold={true}
+                    placeholder="-"
+                  />
+                </div>
+              </div>
             </>
           );
         })()}

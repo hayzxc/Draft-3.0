@@ -498,17 +498,15 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
             </View>
           </View>
 
-          {/* Row 5: Notify party (Opsional — baris tidak dicetak di PDF bila kosong) */}
-          {displayNotifyParty?.trim() && displayNotifyParty.trim() !== "-" ? (
-            <View style={styles.tableRow}>
-              <View style={[styles.cell, { width: "31%" }]}>
-                <Text style={styles.textRegular}>Notify party</Text>
-              </View>
-              <View style={[styles.cellLast, { width: "69%" }]}>
-                {renderMultiLineText(displayNotifyParty)}
-              </View>
+          {/* Row 5: Notify party */}
+          <View style={styles.tableRow}>
+            <View style={[styles.cell, { width: "31%" }]}>
+              <Text style={styles.textRegular}>Notify party</Text>
             </View>
-          ) : null}
+            <View style={[styles.cellLast, { width: "69%" }]}>
+              {renderMultiLineText(displayNotifyParty)}
+            </View>
+          </View>
 
           {/* Row 6: Commodity description and quantity */}
           <View style={styles.tableRow}>
