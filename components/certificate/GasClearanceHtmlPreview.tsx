@@ -55,8 +55,8 @@ export const GasClearanceHtmlPreview: React.FC<GasClearanceHtmlPreviewProps> = (
     data.gasLevelPpm
   );
   const isAttachmentActive = shouldShowGasClearanceAttachment(data);
-  const isContainerAttachmentActive = needsContainerAttachment(containers);
-  const isCommodityAttachmentActive = needsAttachment(data.commodity);
+  const isContainerAttachmentActive = isAttachmentActive && needsContainerAttachment(containers);
+  const isCommodityAttachmentActive = isAttachmentActive && needsAttachment(data.commodity);
 
   // Gas level reading calculation
   let gasReading =

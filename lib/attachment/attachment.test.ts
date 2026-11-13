@@ -192,4 +192,22 @@ assert(!needsContainerAttachment("CSNU1, CSNU2, CSNU3"), "3 containers → needs
 assert(needsContainerAttachment("CSNU1, CSNU2, CSNU3, CSNU4"), "4 containers → needsContainerAttachment is true (goes to attachment)");
 assert(needsContainerAttachment("CSNU1, CSNU2, CSNU3, CSNU4, CSNU5"), "5 containers → needsContainerAttachment is true (goes to attachment)");
 
+// --- 8. Integration: Containers only move to attachment if attachment page is active ---
+console.log("\n--- Container & Attachment Dependency Tests ---");
+const fourContainers = ["CSNU1", "CSNU2", "CSNU3", "CSNU4"];
+const shortCommodity = "SHORT COMMODITY";
+const longCommodity = Array.from({ length: 13 }, (_, i) => `Line ${i + 1}`).join("\n");
+
+// If attachment is not active (short commodity):
+const isAttachmentActiveShort = needsAttachment(shortCommodity);
+assert(!isAttachmentActiveShort, "attachment page is false for short commodity");
+const isContainerAttachedWhenNoAttachment = isAttachmentActiveShort && needsContainerAttachment(fourContainers);
+assert(!isContainerAttachedWhenNoAttachment, "containers do NOT move to attachment if attachment is not active");
+
+// If attachment IS active (long commodity):
+const isAttachmentActiveLong = needsAttachment(longCommodity);
+assert(isAttachmentActiveLong, "attachment page is true for long commodity");
+const isContainerAttachedWhenAttachmentActive = isAttachmentActiveLong && needsContainerAttachment(fourContainers);
+assert(isContainerAttachedWhenAttachmentActive, "containers DO move to attachment table if attachment is active and containers >= 4");
+
 console.log("\n✅ ALL ATTACHMENT UNIT TESTS PASSED SUCCESSFULLY.\n");

@@ -319,13 +319,7 @@ const renderMultiLineText = (text: string | null | undefined, maxWordLen = 25) =
 export const shouldShowTreatmentAttachment = (
   data: TreatmentCertificateData
 ): boolean => {
-  const containers = parseContainersJson(
-    undefined,
-    data.containers,
-    data.sealNumbers,
-    data.finalTlvReading
-  );
-  return needsFcAttachment(data.commodityDescription) || needsContainerAttachment(containers);
+  return needsFcAttachment(data.commodityDescription);
 };
 
 export const TreatmentAttachmentPdfPage: React.FC<{
@@ -376,8 +370,8 @@ export const TreatmentDocument: React.FC<{ data: TreatmentCertificateData }> = (
     data.sealNumbers,
     data.finalTlvReading
   );
-  const isFcContainerAttachmentActive = needsContainerAttachment(fcContainers);
-  const isFcCommodityAttachmentActive = needsFcAttachment(data.commodityDescription);
+  const isFcContainerAttachmentActive = isFcAttachmentActive && needsContainerAttachment(fcContainers);
+  const isFcCommodityAttachmentActive = isFcAttachmentActive && needsFcAttachment(data.commodityDescription);
 
   const gcData = mapTreatmentToGasClearanceData(data);
   const isGcAttachmentActive = shouldShowGasClearanceAttachment(gcData);

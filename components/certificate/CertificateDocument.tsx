@@ -385,13 +385,7 @@ export const parseContainersJson = (
 
 export const shouldShowGasClearanceAttachment = (data: GasClearanceCertificateData): boolean => {
   if (data.hasAttachment === true) return true;
-  const containers = parseContainersJson(
-    data.containersJson,
-    data.containerNumber,
-    data.sealNumber,
-    data.gasLevelPpm
-  );
-  return needsAttachment(data.commodity) || needsContainerAttachment(containers);
+  return needsAttachment(data.commodity);
 };
 
 export const formatPage1CommodityLines = (
@@ -427,7 +421,7 @@ const formatDateTime = (date: Date | string | undefined | null): string => {
 export const GasClearancePdfPage: React.FC<{
   data: GasClearanceCertificateData;
   isAttachmentActive?: boolean;
-}> = ({ data, isAttachmentActive = false }) => {
+}> = ({ data, isAttachmentActive: isAttachmentActiveProp }) => {
   const logoUrl = data.logoImageUrl || "/images/letterhead.jpg";
   const verificationLink = data.verificationUrl?.trim() || "";
   const containers = parseContainersJson(
@@ -437,8 +431,12 @@ export const GasClearancePdfPage: React.FC<{
     data.gasLevelPpm
   );
 
-  const isContainerAttachmentActive = needsContainerAttachment(containers);
-  const isCommodityAttachmentActive = needsAttachment(data.commodity);
+  const isAttachmentActive =
+    isAttachmentActiveProp !== undefined
+      ? isAttachmentActiveProp
+      : shouldShowGasClearanceAttachment(data);
+  const isContainerAttachmentActive = isAttachmentActive && needsContainerAttachment(containers);
+  const isCommodityAttachmentActive = isAttachmentActive && needsAttachment(data.commodity);
 
   let gasReading =
     data.gasLevelReading?.trim() ||

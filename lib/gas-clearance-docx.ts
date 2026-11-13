@@ -132,8 +132,8 @@ export async function createGasClearanceDocxElements(
     data.gasLevelPpm
   );
   const isAttachmentActive = shouldShowGasClearanceAttachment(data);
-  const isContainerAttachmentActive = needsContainerAttachment(containers);
-  const isCommodityAttachmentActive = needsAttachment(data.commodity);
+  const isContainerAttachmentActive = isAttachmentActive && needsContainerAttachment(containers);
+  const isCommodityAttachmentActive = isAttachmentActive && needsAttachment(data.commodity);
 
   const page1CommodityText = isCommodityAttachmentActive
     ? formatPage1CommodityLines(data.commodity, true).join("\n")

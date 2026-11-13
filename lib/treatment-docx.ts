@@ -170,9 +170,9 @@ export async function createTreatmentDocxDocument(
     data.sealNumbers,
     data.finalTlvReading
   );
-  const isFcContainerAttachmentActive = needsContainerAttachment(fcContainers);
-  const isFcCommodityAttachmentActive = needsFcAttachment(data.commodityDescription);
-  const isFcAttachmentActive = isFcCommodityAttachmentActive || isFcContainerAttachmentActive;
+  const isFcAttachmentActive = needsFcAttachment(data.commodityDescription);
+  const isFcCommodityAttachmentActive = isFcAttachmentActive;
+  const isFcContainerAttachmentActive = isFcAttachmentActive && needsContainerAttachment(fcContainers);
 
   // Section Heading helper
   const createSectionHeader = (title: string): Paragraph => {
